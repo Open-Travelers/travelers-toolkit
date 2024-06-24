@@ -4,9 +4,9 @@ project(ttoolkit)
 set(CMAKE_CXX_STANDARD 23)
 set(CXX_STANDARD 23)
 
-# nativefiledialog-extended
+# portable-file-dialogs
 add_subdirectory("ext/portable-file-dialogs")
-
+set(LIBRARIES portable_file_dialogs)
 
 # opengl
 find_package(OpenGL REQUIRED)
