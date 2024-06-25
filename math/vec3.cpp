@@ -1,5 +1,6 @@
 #include "vec3.h"
 #include <cmath>
+float *Vec3::data() { return m_data; }
 float Vec3::x() const { return m_data[0]; }
 float Vec3::y() const { return m_data[1]; }
 float Vec3::z() const { return m_data[2]; }
