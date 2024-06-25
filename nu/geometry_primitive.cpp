@@ -1,5 +1,4 @@
 #include "geometry_primitive.h"
-#include <iostream>
 
 namespace Nu {
     GeometryPrimitive::GeometryPrimitive() { }
@@ -23,11 +22,6 @@ namespace Nu {
                 if (count < 3) continue;
 
                 m_faces.push_back((GeometryPrimitiveFace) { count, i });
-                /*std::cout << std::to_string(count) << ": ";
-                for (int z = 0; z < count; z++)
-                    std::cout << std::to_string(m_indices[i + z]) << "; ";
-                std::cout << std::endl;*/
-
                 i += count;
             }
 
