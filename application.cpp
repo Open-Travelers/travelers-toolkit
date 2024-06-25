@@ -12,10 +12,7 @@ extern "C" {
 #include "imgui_impl_opengl3.h"
 #include "nu/scene.h"
 #include "math/mat4x4.h"
-#include "math/vec2.h"
 #include "math/vec3.h"
-#include "math/vec4.h"
-#include "shader.h"
 #include "scene_renderer.h"
 
 #include "portable-file-dialogs.h"
