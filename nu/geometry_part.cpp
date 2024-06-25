@@ -111,7 +111,14 @@ namespace Nu {
     }
     bool GeometryPart::read(BinaryStream &stream)
     {
-        stream.seek(SEEK_CUR, 4);
+        auto material_index = stream.read_word();
+        if (!material_index.has_value())
+        {
+            std::cerr << "Failed to read material index" << std::endl;
+            return false;
+        }
+        m_material_index = material_index.value();
+
         // regular geometry object
         // GeomVtx
         //std::cout << "Reading part vertices..." << std::endl;
