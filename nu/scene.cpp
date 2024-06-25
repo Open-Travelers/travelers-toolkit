@@ -98,6 +98,7 @@ namespace Nu {
                         std::cerr << "Material reading failed, skipping." << std::endl;
                         stream.seek(SEEK_SET, nextpos);
                     }
+                    m_materials.push_back(mat);
                 }
             } else if (header_raw == "NTBL") {
                 // skip
