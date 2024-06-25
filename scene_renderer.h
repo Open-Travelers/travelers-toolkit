@@ -9,8 +9,9 @@ class GeometryDefinitionRenderState {
 protected:
     GLuint m_vao, m_vbo;
     std::vector<int> m_vertex_offsets;
+    std::vector<int> m_texture_ids;
 public:
-    GeometryDefinitionRenderState(GLuint vao, GLuint vbo, std::vector<int> vertex_offsets);
+    GeometryDefinitionRenderState(GLuint vao, GLuint vbo, std::vector<int> vertex_offsets, std::vector<int> texture_ids);
     GeometryDefinitionRenderState() {}
     friend class NuSceneRenderer;
 };

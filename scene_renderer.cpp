@@ -3,37 +3,39 @@
 #include "scene_renderer.h"
 
 static const GLchar* vertex_shader_src = \
-        "#version 330 core\n"\
-        "layout ( location=0 ) in vec3 l_position;\n"\
-        "layout ( location=1 ) in vec3 l_normal;\n"\
-        "layout ( location=2 ) in vec2 l_uv;\n"\
-        "layout ( location=3 ) in uint l_color;\n"\
-        "uniform mat4 u_mvp;"\
+        "#version 330 core\n"
+        "layout ( location=0 ) in vec3 l_position;\n"
+        "layout ( location=1 ) in vec3 l_normal;\n"
+        "layout ( location=2 ) in vec2 l_uv;\n"
+        "layout ( location=3 ) in uint l_color;\n"
+        "uniform mat4 u_mvp;\n"
         "out vec4 v_color;\n"
-        "void main() {\n"\
+        "out vec2 v_uv;\n"
+        "void main() {\n"
         "    float r, g, b;"
-        "    r = ((l_color ) & uint(0xff)) / 256.0;\n"\
-        "    g = ((l_color >> 8) & uint(0xff)) / 256.0;\n"\
-        "    b = ((l_color >> 16) & uint(0xff)) / 256.0;\n"\
+        "    r = ((l_color) & uint(0xff)) / 256.0;\n"
+        "    g = ((l_color >> 8) & uint(0xff)) / 256.0;\n"
+        "    b = ((l_color >> 16) & uint(0xff)) / 256.0;\n"
         "    v_color = vec4(r, g, b, 1.0);\n"
-        "    gl_Position = u_mvp * vec4(l_position, 1.0f);\n"\
+        "    v_uv = l_uv;\n"
+        "    gl_Position = u_mvp * vec4(l_position, 1.0f);\n"
         "}\n";
-/*
-        "flat out uint v_color;"\
-        "    v_color = l_color;"
-
-        "flat in uint v_color;\n"\
-*/
 static const GLchar* fragment_shader_src = \
-        "#version 330 core\n"\
-        "out vec4 color;\n"\
+        "#version 330 core\n"
+        "out vec4 color;\n"
         "in vec4 v_color;\n"
-        "void main() {\n"\
-        "    color = v_color;\n"\
+        "in vec2 v_uv;\n"
+        "uniform vec3 u_diffuse;\n"
+        "uniform vec3 u_ambient;\n"
+        "uniform float u_ambient_power;\n"
+        "uniform sampler2D u_texture;\n"
+        "void main() {\n"
+        "    vec3 ambien = v_color.xyz;\n"
+        "    color = texture(u_texture, v_uv) * vec4(ambien, 1.0);\n"
         "}\n";
 
-GeometryDefinitionRenderState::GeometryDefinitionRenderState(GLuint vao, GLuint vbo, std::vector<int> vertex_offsets) 
-    : m_vao(vao), m_vbo(vbo), m_vertex_offsets(vertex_offsets)
+GeometryDefinitionRenderState::GeometryDefinitionRenderState(GLuint vao, GLuint vbo, std::vector<int> vertex_offsets, std::vector<int> texture_ids) 
+    : m_vao(vao), m_vbo(vbo), m_vertex_offsets(vertex_offsets), m_texture_ids(texture_ids)
 {
     
 }
@@ -54,12 +56,15 @@ void NuSceneRenderer::deload()
     {
         glDeleteVertexArrays(1, &s.second.m_vao);
         glDeleteBuffers(1, &s.second.m_vbo);
+        for (GLuint id : s.second.m_texture_ids)
+            glDeleteTextures(1, &id);
     }
     m_render_states.clear();
 
     glDeleteVertexArrays(1, &m_bounds_vao);
     glDeleteBuffers(1, &m_bounds_ibo);
     glDeleteBuffers(1, &m_bounds_vbo);
+    
     m_bounds_vertices.clear();
     m_bounds_elements.clear();
 }
@@ -78,6 +83,7 @@ bool NuSceneRenderer::load(Nu::Scene &scene)
 
     if (m_scene_loaded)
         deload();
+    glEnable(GL_TEXTURE_2D);
     // create VBO and stick every single vertex of the same type inside
     GLuint vbo;
     glGenBuffers(1, &vbo);
@@ -110,10 +116,49 @@ bool NuSceneRenderer::load(Nu::Scene &scene)
         // copy data into the new VBO and store vertex offsets
         int vertex_offset = 0;
         std::vector<int> part_vertex_offsets;
-        
+        std::vector<int> part_texture_ids;
+
+        std::map<int, GLint> texture_map;
         for (int parti = 0; parti < partcount; parti++)
         {
             Nu::GeometryPart* part = (Nu::GeometryPart*) def->get_parts_raw() + parti;
+            int idx = part->material_index();
+            
+            Nu::Material *mat = (Nu::Material*) (scene.get_materials_raw() + idx);
+            int tidx = mat->texture();
+            if (!texture_map.contains(tidx))
+            {
+                Nu::Material *mat = (Nu::Material*) (scene.get_materials_raw() + idx);
+                GLuint tid = 0;
+                if (mat->texture() == -1)
+                {
+                    tid = 0;
+                } else {
+                    Nu::Texture tex = scene.get_textures()[mat->texture()];
+                    if (tex.width() == 0 || tex.height() == 0 || tex.get_rgba_data() == nullptr)
+                    {
+                        tid = 0;
+                    } else {
+                        glGenTextures(1, &tid);
+                        glActiveTexture(GL_TEXTURE0);
+                        glBindTexture(GL_TEXTURE_2D, tid);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+                        //glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_REPEAT);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                        //std::cout << std::to_string(tex.get_rgba_data()[0]) << std::endl;
+                        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex.width(), tex.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, tex.get_rgba_data());
+                    }
+                }
+                texture_map[tidx] = tid;
+
+                part_texture_ids.push_back(tid);
+            } else {
+                part_texture_ids.push_back(texture_map[tidx]);
+            }
+                
+            
             int vtxcount = part->get_vertex_count();
             glBufferSubData(GL_ARRAY_BUFFER, vertex_offset * sizeof(Nu::Vertex), vtxcount * sizeof(Nu::Vertex), part->get_vertices_raw());
             part_vertex_offsets.push_back(vertex_offset);
@@ -137,7 +182,7 @@ bool NuSceneRenderer::load(Nu::Scene &scene)
         glVertexAttribPointer(3, 1, GL_UNSIGNED_INT, GL_FALSE, sizeof(Nu::Vertex), (void*)(3*4+3*4+2*4));
 
         // data per object: vao, vbo, vertex offsets
-        m_render_states[defi] = GeometryDefinitionRenderState(vao, vbo, part_vertex_offsets);
+        m_render_states[defi] = GeometryDefinitionRenderState(vao, vbo, part_vertex_offsets, part_texture_ids);
     }
 
     glBindVertexArray(0);
@@ -225,8 +270,14 @@ bool NuSceneRenderer::render_scene_all(Nu::Scene &scene, Mat4x4 view, Mat4x4 pro
 {
     if (!m_scene_loaded || !m_shader_loaded)
         return false;
-
+    glEnable(GL_TEXTURE_2D);
     m_shader->bind();
+    GLuint mvp_loc = m_shader->get_uniform_location("u_mvp");
+    GLuint diffuse_loc = m_shader->get_uniform_location("u_diffuse");
+    GLuint ambient_loc = m_shader->get_uniform_location("u_ambient");
+    GLuint ambient_power_loc = m_shader->get_uniform_location("u_ambient_power");
+    
+    
     for (Nu::Instance instance : scene.get_instances())
     {
         Mat4x4 transform = instance.get_transform_matrix();
@@ -235,7 +286,6 @@ bool NuSceneRenderer::render_scene_all(Nu::Scene &scene, Mat4x4 view, Mat4x4 pro
         GeometryDefinitionRenderState state = m_render_states[instance.get_geometry_object()];
         glBindVertexArray(state.m_vao);
         
-        GLuint mvp_loc = m_shader->get_uniform_location("u_mvp");
 
         glUniformMatrix4fv(mvp_loc, 1, GL_FALSE, mvp.data());
 
@@ -250,6 +300,13 @@ bool NuSceneRenderer::render_scene_all(Nu::Scene &scene, Mat4x4 view, Mat4x4 pro
         int which_offset = 0;
         for (Nu::GeometryPart part : definition.get_parts())
         {
+            int mat_idx = part.material_index();
+            Nu::Material* mt = (Nu::Material*) (scene.get_materials_raw() + mat_idx);
+            glUniform3fv(ambient_loc, 1, mt->ambient().data());
+            glUniform3fv(diffuse_loc, 1, mt->diffuse().data());
+            glUniform1f(ambient_power_loc, mt->power());
+
+            glBindTexture(GL_TEXTURE_2D, state.m_texture_ids[which_offset]);
             for (Nu::GeometryPrimitive prim : part.get_primitives())
             {
                 GLenum mode = (prim.get_type() == Nu::GeometryPrimitive::Type::tPrimTriStrip) ? GL_TRIANGLE_STRIP : GL_TRIANGLES;
