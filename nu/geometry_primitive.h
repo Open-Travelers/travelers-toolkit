@@ -26,7 +26,7 @@ public:
     bool read(BinaryStream &stream);
 
     Type get_type() { return m_type; }
-    ushort *get_data_raw() { return m_indices.data(); }
+    uint16_t *get_data_raw() { return m_indices.data(); }
     int get_data_count() { return m_indices.size(); }
 
     std::vector<GeometryPrimitiveFace> const& get_faces() { return m_faces; }
@@ -34,7 +34,7 @@ public:
     int get_faces_count() { return m_faces.size(); }
 protected:
     Type m_type { Type::tPrimInvalid };
-    std::vector<ushort> m_indices;
+    std::vector<uint16_t> m_indices;
     std::vector<GeometryPrimitiveFace> m_faces;
 };
 

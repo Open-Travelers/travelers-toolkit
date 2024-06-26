@@ -24,7 +24,7 @@ protected:
     std::unique_ptr<Shader> m_shader;
     
     std::vector<Nu::Vertex> m_bounds_vertices;
-    std::vector<ushort> m_bounds_elements;
+    std::vector<uint16_t> m_bounds_elements;
     GLuint m_bounds_vao, m_bounds_vbo, m_bounds_ibo;
 
     void deload();
