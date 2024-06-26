@@ -115,6 +115,18 @@ namespace Nu {
                 m_rgba_data.push_back(r);
                 m_rgba_data.push_back(a);
             }
+        } else if (m_type == 2)
+        {
+            for (int i = 0; i < size; i+=3)
+            {
+                uint8_t r = txdata[i + 1];
+                uint8_t g = txdata[i + 2];
+                uint8_t b = txdata[i + 3];
+                m_rgba_data.push_back(b);
+                m_rgba_data.push_back(g);
+                m_rgba_data.push_back(r);
+                m_rgba_data.push_back(1.0f);
+            }
         }
         delete[] txdata;
 
