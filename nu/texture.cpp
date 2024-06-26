@@ -119,13 +119,13 @@ namespace Nu {
         {
             for (int i = 0; i < size; i+=3)
             {
-                uint8_t r = txdata[i + 1];
-                uint8_t g = txdata[i + 2];
-                uint8_t b = txdata[i + 3];
+                uint8_t r = txdata[i + 0];
+                uint8_t g = txdata[i + 1];
+                uint8_t b = txdata[i + 2];
                 m_rgba_data.push_back(b);
                 m_rgba_data.push_back(g);
                 m_rgba_data.push_back(r);
-                m_rgba_data.push_back(1.0f);
+                m_rgba_data.push_back(255);
             }
         }
         delete[] txdata;
