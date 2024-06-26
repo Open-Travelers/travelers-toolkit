@@ -7,7 +7,6 @@ bool Vertex::read(BinaryStream &stream)
 {
     if (!m_position.read(stream))
         return false;
-    //m_position.set_z(m_position.z() * -1);
     
     if (!m_normal.read(stream))
         return false;
@@ -16,7 +15,7 @@ bool Vertex::read(BinaryStream &stream)
     if (!rgba.has_value()) 
         return false;
     m_rgba = rgba.value();
-    //std::cout << std::to_string(m_rgba) << std::endl;
+
     if (!m_uv.read(stream))
         return false;
     return true;
