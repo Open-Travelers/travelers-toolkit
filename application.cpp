@@ -23,7 +23,7 @@ Application::Application() {
 Application::~Application() {
 
 }
-
+static std::string comeonman ="No textures loaded";
 int Application::run(int argc, char **argv) {
 
     if (!pfd::settings::available())
@@ -60,6 +60,8 @@ int Application::run(int argc, char **argv) {
     float cam_rot = 0;
     float move_speed = 0.5f;
     float rot_speed = 0.1f;
+    int txv_current_item = 0;
+    std::vector<std::string> txv_items;
     while (window.isOpen())
     {
         // poll events
@@ -194,6 +196,10 @@ int Application::run(int argc, char **argv) {
                             goto exit;
                         }
                         std::cout << "NuScene loaded for rendering successfully" << std::endl;
+                        txv_items.clear();
+                        for (int i = 0; i < scene.get_textures().size(); i++)
+                            txv_items.push_back("Texture " + std::to_string(i));
+                        txv_current_item = 0;
                     }
                 }
 exit:
@@ -209,6 +215,34 @@ exit:
         }
         ImGui::End();
 
+        if (ImGui::Begin("Texture Viewer"))
+        {
+            if (txv_items.size() == 0)
+            {
+                ImGui::Text("No textures loaded");
+            } else {
+                if (ImGui::Button("Prev") && txv_current_item > 0) txv_current_item--;
+                ImGui::SameLine();
+                if (ImGui::Button("Next") && txv_current_item < txv_items.size() - 1) txv_current_item++;
+
+                ImGui::ListBox("##Texture ID", &txv_current_item, [](void* user_data, int which) -> const char* { 
+                    return (((std::string*) user_data)[which]).c_str();
+                }, (void*) txv_items.data(), txv_items.size());
+                auto texture_raw = scene_renderer.get_texture(txv_current_item);
+                if (texture_raw.has_value())
+                {
+                    ImGui::SameLine();
+                    ImGui::BeginChild("texture-view");
+                    
+                    Nu::Texture tex = scene.get_textures()[txv_current_item];
+                    ImVec2 wsize = (ImVec2) { (float) tex.width(), (float) tex.height() };
+
+                    ImGui::Image((ImTextureID) texture_raw.value(), wsize, ImVec2(0, 0), ImVec2(1, 1));
+                    ImGui::EndChild();
+                }
+            }
+        }
+        ImGui::End();
         // render 3d
         glDisable(GL_CULL_FACE);
         glEnable(GL_DEPTH_TEST);
