@@ -111,13 +111,16 @@ namespace Nu {
                 auto str_count = stream.read_word();
                 if (!str_count.has_value())
                     return false;
+                int used = 4;
                 for (int i = 0; i < str_count; i++)
                 {
                     auto str = stream.read_zero_terminated_string();
                     if (!str.has_value())
                         return false;
                     m_nametable.push_back(str.value());
+                    used += str.value().length() + 1;
                 }
+                stream.seek(SEEK_CUR, size_raw - 8 - used);
             } else if (header_raw == "GST0") {
                 auto count = stream.read_word();
                 if (!count.has_value())
