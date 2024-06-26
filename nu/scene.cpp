@@ -51,6 +51,12 @@ namespace Nu {
         }
         if (offset != 0)
             stream.seek(SEEK_CUR, offset);
+        m_geometry_definitions.clear();
+        m_instances.clear();
+        m_materials.clear();
+        m_textures.clear();
+        m_nametable.clear();
+
         // start tree parsing
         return read_root(stream);
     }
@@ -102,7 +108,16 @@ namespace Nu {
                 }
             } else if (header_raw == "NTBL") {
                 // skip
-                stream.seek(SEEK_CUR, size_raw - 8);
+                auto str_count = stream.read_word();
+                if (!str_count.has_value())
+                    return false;
+                for (int i = 0; i < str_count; i++)
+                {
+                    auto str = stream.read_zero_terminated_string();
+                    if (!str.has_value())
+                        return false;
+                    m_nametable.push_back(str.value());
+                }
             } else if (header_raw == "GST0") {
                 auto count = stream.read_word();
                 if (!count.has_value())

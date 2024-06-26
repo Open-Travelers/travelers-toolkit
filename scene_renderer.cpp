@@ -52,12 +52,13 @@ NuSceneRenderer::~NuSceneRenderer()
 }
 void NuSceneRenderer::deload()
 {
-    for (auto const& s : m_render_states)
+    for (auto& s : m_render_states)
     {
-        glDeleteVertexArrays(1, &s.second.m_vao);
         glDeleteBuffers(1, &s.second.m_vbo);
         for (GLuint id : s.second.m_texture_ids)
             glDeleteTextures(1, &id);
+        s.second.m_texture_ids.clear();
+        glDeleteVertexArrays(1, &s.second.m_vao);
     }
     m_render_states.clear();
 

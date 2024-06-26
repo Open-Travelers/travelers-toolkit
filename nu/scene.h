@@ -29,6 +29,7 @@ namespace Nu {
         std::vector<Instance> m_instances;
         std::vector<Texture> m_textures;
         std::vector<Material> m_materials;
+        std::vector<std::string> m_nametable;
         Vec3 m_min_bounds { Vec3(0, 0, 0) };
         Vec3 m_max_bounds { Vec3(0, 0, 0) };
     };
