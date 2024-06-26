@@ -1,4 +1,5 @@
 #include <iostream>
+#include <optional>
 #include "glad/glad.h"
 #include "scene_renderer.h"
 
@@ -34,8 +35,8 @@ static const GLchar* fragment_shader_src = \
         "    color = texture(u_texture, v_uv) * vec4(ambien, 1.0);\n"
         "}\n";
 
-GeometryDefinitionRenderState::GeometryDefinitionRenderState(GLuint vao, GLuint vbo, std::vector<int> vertex_offsets, std::vector<int> texture_ids) 
-    : m_vao(vao), m_vbo(vbo), m_vertex_offsets(vertex_offsets), m_texture_ids(texture_ids)
+GeometryDefinitionRenderState::GeometryDefinitionRenderState(GLuint vao, GLuint vbo, std::vector<int> vertex_offsets) 
+    : m_vao(vao), m_vbo(vbo), m_vertex_offsets(vertex_offsets)
 {
     
 }
@@ -55,12 +56,11 @@ void NuSceneRenderer::deload()
     for (auto& s : m_render_states)
     {
         glDeleteBuffers(1, &s.second.m_vbo);
-        for (GLuint id : s.second.m_texture_ids)
-            glDeleteTextures(1, &id);
-        s.second.m_texture_ids.clear();
         glDeleteVertexArrays(1, &s.second.m_vao);
     }
     m_render_states.clear();
+    for (auto tid : m_texture_ids)
+        glDeleteTextures(1, &tid);
 
     glDeleteVertexArrays(1, &m_bounds_vao);
     glDeleteBuffers(1, &m_bounds_ibo);
@@ -68,6 +68,7 @@ void NuSceneRenderer::deload()
     
     m_bounds_vertices.clear();
     m_bounds_elements.clear();
+    m_texture_ids.clear();
 }
 bool NuSceneRenderer::load(Nu::Scene &scene)
 {
@@ -89,8 +90,22 @@ bool NuSceneRenderer::load(Nu::Scene &scene)
     GLuint vbo;
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
-    // calculate N of vertices
+    
+    for (auto tex : scene.get_textures())
+    {
+        GLuint tid;
+        glGenTextures(1, &tid);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tid);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        //glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        //std::cout << std::to_string(tex.get_rgba_data()[0]) << std::endl;
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex.width(), tex.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, tex.get_rgba_data());
+        m_texture_ids.push_back(tid);
+    }
     int defcount = scene.get_definition_count();
     for (int defi = 0; defi < defcount; defi++)
     {
@@ -123,43 +138,6 @@ bool NuSceneRenderer::load(Nu::Scene &scene)
         for (int parti = 0; parti < partcount; parti++)
         {
             Nu::GeometryPart* part = (Nu::GeometryPart*) def->get_parts_raw() + parti;
-            int idx = part->material_index();
-            
-            Nu::Material *mat = (Nu::Material*) (scene.get_materials_raw() + idx);
-            int tidx = mat->texture();
-            if (!texture_map.contains(tidx))
-            {
-                Nu::Material *mat = (Nu::Material*) (scene.get_materials_raw() + idx);
-                GLuint tid = 0;
-                if (mat->texture() == -1)
-                {
-                    tid = 0;
-                } else {
-                    Nu::Texture tex = scene.get_textures()[mat->texture()];
-                    if (tex.width() == 0 || tex.height() == 0 || tex.get_rgba_data() == nullptr)
-                    {
-                        tid = 0;
-                    } else {
-                        glGenTextures(1, &tid);
-                        glActiveTexture(GL_TEXTURE0);
-                        glBindTexture(GL_TEXTURE_2D, tid);
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-                        //glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_REPEAT);
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                        //std::cout << std::to_string(tex.get_rgba_data()[0]) << std::endl;
-                        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex.width(), tex.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, tex.get_rgba_data());
-                    }
-                }
-                texture_map[tidx] = tid;
-
-                part_texture_ids.push_back(tid);
-            } else {
-                part_texture_ids.push_back(texture_map[tidx]);
-            }
-                
-            
             int vtxcount = part->get_vertex_count();
             glBufferSubData(GL_ARRAY_BUFFER, vertex_offset * sizeof(Nu::Vertex), vtxcount * sizeof(Nu::Vertex), part->get_vertices_raw());
             part_vertex_offsets.push_back(vertex_offset);
@@ -183,7 +161,7 @@ bool NuSceneRenderer::load(Nu::Scene &scene)
         glVertexAttribPointer(3, 1, GL_UNSIGNED_INT, GL_FALSE, sizeof(Nu::Vertex), (void*)(3*4+3*4+2*4));
 
         // data per object: vao, vbo, vertex offsets
-        m_render_states[defi] = GeometryDefinitionRenderState(vao, vbo, part_vertex_offsets, part_texture_ids);
+        m_render_states[defi] = GeometryDefinitionRenderState(vao, vbo, part_vertex_offsets);
     }
 
     glBindVertexArray(0);
@@ -307,7 +285,7 @@ bool NuSceneRenderer::render_scene_all(Nu::Scene &scene, Mat4x4 view, Mat4x4 pro
             glUniform3fv(diffuse_loc, 1, mt->diffuse().data());
             glUniform1f(ambient_power_loc, mt->power());
 
-            glBindTexture(GL_TEXTURE_2D, state.m_texture_ids[which_offset]);
+            glBindTexture(GL_TEXTURE_2D, m_texture_ids[mt->texture()]);
             for (Nu::GeometryPrimitive prim : part.get_primitives())
             {
                 GLenum mode = (prim.get_type() == Nu::GeometryPrimitive::Type::tPrimTriStrip) ? GL_TRIANGLE_STRIP : GL_TRIANGLES;
@@ -338,4 +316,11 @@ bool NuSceneRenderer::render_scene_all(Nu::Scene &scene, Mat4x4 view, Mat4x4 pro
 */
     
     return true;
+}
+
+std::optional<GLuint> NuSceneRenderer::get_texture(int id)
+{
+    if (id < 0 || id >= m_texture_ids.size())
+        return std::nullopt;
+    return std::make_optional(m_texture_ids[id]);
 }
