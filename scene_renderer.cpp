@@ -10,13 +10,20 @@ static const GLchar* vertex_shader_src = \
         "layout ( location=2 ) in vec2 l_uv;\n"
         "layout ( location=3 ) in uint l_color;\n"
         "uniform mat4 u_mvp;\n"
+        "uniform bool u_drop_color;\n"
         "out vec4 v_color;\n"
         "out vec2 v_uv;\n"
         "void main() {\n"
-        "    float r, g, b;"
-        "    r = ((l_color) & uint(0xff)) / 256.0;\n"
-        "    g = ((l_color >> 8) & uint(0xff)) / 256.0;\n"
-        "    b = ((l_color >> 16) & uint(0xff)) / 256.0;\n"
+        "    float r, g, b;\n"
+        "    if (!u_drop_color) {\n"
+        "        r = ((l_color) & uint(0xff)) / 256.0;\n"
+        "        g = ((l_color >> 8) & uint(0xff)) / 256.0;\n"
+        "        b = ((l_color >> 16) & uint(0xff)) / 256.0;\n"
+        "    } else {\n"
+        "        r = 1.0f;\n"
+        "        g = 1.0f;\n"
+        "        b = 1.0f;\n"
+        "    }\n"
         "    v_color = vec4(r, g, b, 1.0);\n"
         "    v_uv = l_uv;\n"
         "    gl_Position = u_mvp * vec4(l_position, 1.0f);\n"
@@ -255,7 +262,7 @@ bool NuSceneRenderer::render_scene_all(Nu::Scene &scene, Mat4x4 view, Mat4x4 pro
     GLuint diffuse_loc = m_shader->get_uniform_location("u_diffuse");
     GLuint ambient_loc = m_shader->get_uniform_location("u_ambient");
     GLuint ambient_power_loc = m_shader->get_uniform_location("u_ambient_power");
-    
+    GLuint drop_color_loc = m_shader->get_uniform_location("u_drop_color");
     
     for (Nu::Instance instance : scene.get_instances())
     {
@@ -284,6 +291,7 @@ bool NuSceneRenderer::render_scene_all(Nu::Scene &scene, Mat4x4 view, Mat4x4 pro
             glUniform3fv(ambient_loc, 1, mt->ambient().data());
             glUniform3fv(diffuse_loc, 1, mt->diffuse().data());
             glUniform1f(ambient_power_loc, mt->power());
+            glUniform1iv(drop_color_loc, 1, &m_drop_color);
 
             glBindTexture(GL_TEXTURE_2D, m_texture_ids[mt->texture()]);
             for (Nu::GeometryPrimitive prim : part.get_primitives())
@@ -323,4 +331,9 @@ std::optional<GLuint> NuSceneRenderer::get_texture(int id)
     if (id < 0 || id >= m_texture_ids.size())
         return std::nullopt;
     return std::make_optional(m_texture_ids[id]);
+}
+
+void NuSceneRenderer::set_ignore_color(bool value)
+{
+    m_drop_color = value ? GL_TRUE : GL_FALSE;
 }

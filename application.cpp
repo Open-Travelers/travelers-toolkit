@@ -61,6 +61,7 @@ int Application::run(int argc, char **argv) {
     float move_speed = 0.5f;
     float rot_speed = 0.1f;
     int txv_current_item = 0;
+    bool ignore_color = false;
     std::vector<std::string> txv_items;
     while (window.isOpen())
     {
@@ -212,6 +213,10 @@ exit:
         {
             ImGui::SliderFloat("Move speed", &move_speed, 0.1, 20.f);
             ImGui::SliderFloat("Rot speed", &rot_speed, 0.1, 5.f);
+            if (ImGui::Checkbox("Ignore Vertex Color", &ignore_color))
+            {
+                scene_renderer.set_ignore_color(ignore_color);
+            }
         }
         ImGui::End();
 

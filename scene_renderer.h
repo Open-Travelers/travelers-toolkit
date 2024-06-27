@@ -19,6 +19,7 @@ class NuSceneRenderer {
 protected:
     bool m_scene_loaded { false };
     bool m_shader_loaded { false };
+    GLint m_drop_color { GL_FALSE };
     std::map<int, GeometryDefinitionRenderState> m_render_states;
     std::unique_ptr<Shader> m_shader;
     
@@ -32,6 +33,7 @@ public:
     NuSceneRenderer();
     ~NuSceneRenderer();
     std::optional<GLuint> get_texture(int id);
+    void set_ignore_color(bool value);
     bool load(Nu::Scene &scene);
     bool render_scene_instance(Nu::Scene &scene, int id);
     bool render_scene_all(Nu::Scene &scene, Mat4x4 view, Mat4x4 projection);
