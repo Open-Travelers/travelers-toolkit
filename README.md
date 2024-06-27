@@ -1,5 +1,5 @@
 # Traveler's Toolkit
-![All builds passing](https://github.com/Open-Travelers/travelers-toolkit/actions/workflows/cmake-multi-platform.yaml/badge.svg)
+![All builds passing](https://github.com/Open-Travelers/travelers-toolkit/actions/workflows/cmake-multi-platform.yml/badge.svg)
 
 This is a level viewer for Crash Bandicoot: The Wrath of Cortex.
 It's built in C++ using ImGui and OpenGL, with SFML used as a window library.
