@@ -25,7 +25,7 @@ Will expand once more start getting supported.
 ## Using the thing
 1. Extract the contents of an ISO for the version of the game you wish to poke around in.
 2. Find a .gsc or .nus file you're interested in. They're all over the place in the disc's filesystem.
-3. Decompress your target .gsc file using an RNC decompressor. I like using [rnc_propack](https://github.com/lab313ru/rnc_propack_source/tree/master), as it's pretty simple to install and use. Eventually I want to bundle my own implementation of an RNC decompressor but currently that is not yet implemented. *This doesn't apply to the Gamecube version, they conveniently forgot to compress anything when making that one.*
+3. Decompress your target .gsc file using an RNC decompressor. I like using [rnc_propack](https://github.com/lab313ru/rnc_propack_source/tree/master), as it's pretty simple to install and use. Eventually I want to bundle my own implementation of an RNC decompressor but currently that is not yet implemented. **This doesn't apply to the Gamecube version, they conveniently forgot to compress anything when making that one.**
 4. Open your target decompressed .gsc file using the tool.
 
 ### Camera movement
