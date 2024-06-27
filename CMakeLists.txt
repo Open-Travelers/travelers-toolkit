@@ -75,7 +75,7 @@ if(WIN32)
     add_custom_command(
             TARGET ttoolkit
             COMMENT "Copy SFML DLLs" POST_BUILD 
-            COMMAND ${CMAKE_COMMAND} -E copy -t $>TARGET_FILE_DIR:ttoolkit> $<TARGET_RUNTIME_DLLS:ttoolkit>
+            COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:ttoolkit> $<TARGET_RUNTIME_DLLS:ttoolkit>
             COMMAND_EXPAND_LISTS    )
 endif()
 install(TARGETS ttoolkit)
