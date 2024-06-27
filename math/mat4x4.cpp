@@ -40,6 +40,10 @@ Mat4x4 Mat4x4::Scale(Vec3 factors)
     };
     return Mat4x4((float*) data);
 }
+Vec3 Mat4x4::get_scale_vector()
+{
+    return Vec3(m_data[0], m_data[5], m_data[10]);
+}
 Mat4x4 Mat4x4::Identity()
 {
     static const float data[] = {
