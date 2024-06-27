@@ -1,4 +1,5 @@
 # Traveler's Toolkit
+![All builds passing](https://github.com/Open-Travelers/travelers-toolkit/actions/workflows/cmake-multi-platform.yaml/badge.svg)
 
 This is a level viewer for Crash Bandicoot: The Wrath of Cortex.
 It's built in C++ using ImGui and OpenGL, with SFML used as a window library.
@@ -21,7 +22,6 @@ Will expand once more start getting supported.
 3. Clone this repo recursively `git clone --recursive https://github.com/Open-Travelers/travelers-toolkit.git`. If you don't use the --recursive flag, you will not get a full repo due to submodules.
 4. Configure using cmake `cmake -B build/`, this will create a build/ directory with your default generator.
 5. Compile using cmake `cmake --build build/`, this should invoke whichever default generator is set on your platform.
-
 ## Using the thing
 1. Extract the contents of an ISO for the version of the game you wish to poke around in.
 2. Find a .gsc or .nus file you're interested in. They're all over the place in the disc's filesystem.
