@@ -7,7 +7,8 @@ namespace Nu
 
 struct GeometryPrimitiveFace
 {
-    unsigned int count;
+    GeometryPrimitiveFace(uint32_t _count, int _data_offset) : count(_count), data_offset(_data_offset) {}
+    uint32_t count;
     int data_offset;
 };
 

@@ -235,7 +235,7 @@ exit:
                     ImGui::BeginChild("texture-view");
                     
                     Nu::Texture tex = scene.get_textures()[txv_current_item];
-                    ImVec2 wsize = (ImVec2) { (float) tex.width(), (float) tex.height() };
+                    ImVec2 wsize((float) tex.width(), (float) tex.height());
 
                     ImGui::Image((ImTextureID) texture_raw.value(), wsize, ImVec2(0, 0), ImVec2(1, 1));
                     ImGui::EndChild();

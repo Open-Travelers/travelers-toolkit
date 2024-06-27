@@ -18,15 +18,15 @@ namespace Nu {
             int i = 0;
             while (i < count.value())
             {
-                unsigned int count = m_indices[i++];
+                uint32_t count = m_indices[i++];
                 if (count < 3) continue;
 
-                m_faces.push_back((GeometryPrimitiveFace) { count, i });
+                m_faces.push_back(GeometryPrimitiveFace(count, i));
                 i += count;
             }
 
         } else {
-            m_faces.push_back((GeometryPrimitiveFace) { count.value(), 0 });
+            m_faces.push_back(GeometryPrimitiveFace(count.value(), 0 ));
         }
         m_type = (GeometryPrimitive::Type) type.value();
         return true;

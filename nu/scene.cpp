@@ -197,12 +197,13 @@ namespace Nu {
             std::cout << "Scene contains no unused geometry definitions." << std::endl;
         }
 
-        struct bounds {
+        struct Bounds {
+            Bounds(Vec3 _min, Vec3 _max) :min(_min), max(_max) { }
             Vec3 min;
             Vec3 max;
         };
-        struct bounds world_bounds = { Vec3(0, 0, 0), Vec3(0, 0, 0)};
-        std::vector<struct bounds> geom_def_bounds;
+        Bounds world_bounds = { Vec3(0, 0, 0), Vec3(0, 0, 0)};
+        std::vector<Bounds> geom_def_bounds;
         for (auto geomdef : m_geometry_definitions)
         {
             Vec3 min(0, 0, 0), max(0, 0, 0);
@@ -225,7 +226,9 @@ namespace Nu {
                         max.set_z(pos.z());
                 }
             }
-            geom_def_bounds.push_back((struct bounds) { min, max });
+
+            Bounds bounds(min, max);
+            geom_def_bounds.push_back(bounds);
         }
 
         for (auto& instance : m_instances)
@@ -234,7 +237,7 @@ namespace Nu {
             if (id < 0 || id >= geom_def_bounds.size())
                 continue;
             
-            struct bounds local_bounds = geom_def_bounds[id];
+            Bounds local_bounds = geom_def_bounds[id];
             local_bounds.min = instance.get_transform_matrix().transform_vector(local_bounds.min);
             local_bounds.max = instance.get_transform_matrix().transform_vector(local_bounds.max);
             if (world_bounds.min.x() > local_bounds.min.x())

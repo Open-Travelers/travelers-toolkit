@@ -211,7 +211,7 @@ bool NuSceneRenderer::load(Nu::Scene &scene)
 
     glGenBuffers(1, &m_bounds_ibo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_bounds_ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(ushort) * m_bounds_elements.size(), m_bounds_elements.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint16_t) * m_bounds_elements.size(), m_bounds_elements.data(), GL_STATIC_DRAW);
 
     glGenVertexArrays(1, &m_bounds_vao);
     glBindVertexArray(m_bounds_vao);
