@@ -180,14 +180,19 @@ namespace Nu {
 
         std::set<int> bruh;
         for (auto& instance : m_instances)
-            bruh.insert(instance.get_geometry_object());
-        
+        {
+            Mat4x4 transform = instance.get_transform_matrix();
+            Vec4 scale_vec = transform.get_scale_vector();
+            if (scale_vec.x() != 0 && scale_vec.y() != 0 && scale_vec.z() != 0)
+                bruh.insert(instance.get_geometry_object());
+        }
+
         bool unused = false;
         for (int i = 0; i < m_geometry_definitions.size(); i++)
         {
             if (bruh.find(i) == bruh.end())
             {
-                std::cout << "Found unused geometry definition: " << std::to_string(i) << std::endl;
+                std::cout << "Found possibly unused geometry definition: " << std::to_string(i) << std::endl;
                 unused = true;
             }
         }
