@@ -33,13 +33,14 @@ static const GLchar* fragment_shader_src = \
         "out vec4 color;\n"
         "in vec4 v_color;\n"
         "in vec2 v_uv;\n"
+        "uniform float u_alpha;\n"
         "uniform vec3 u_diffuse;\n"
         "uniform vec3 u_ambient;\n"
         "uniform float u_ambient_power;\n"
         "uniform sampler2D u_texture;\n"
         "void main() {\n"
         "    vec3 ambien = v_color.xyz;\n"
-        "    color = texture(u_texture, v_uv) * vec4(ambien, 1.0);\n"
+        "    color = texture(u_texture, v_uv) * vec4(ambien, u_alpha);\n"
         "}\n";
 
 GeometryDefinitionRenderState::GeometryDefinitionRenderState(GLuint vao, GLuint vbo, std::vector<int> vertex_offsets) 
@@ -263,7 +264,7 @@ bool NuSceneRenderer::render_scene_all(Nu::Scene &scene, Mat4x4 view, Mat4x4 pro
     GLuint ambient_loc = m_shader->get_uniform_location("u_ambient");
     GLuint ambient_power_loc = m_shader->get_uniform_location("u_ambient_power");
     GLuint drop_color_loc = m_shader->get_uniform_location("u_drop_color");
-    
+    GLuint alpha_loc = m_shader->get_uniform_location("u_alpha");
     for (Nu::Instance instance : scene.get_instances())
     {
         Mat4x4 transform = instance.get_transform_matrix();
@@ -292,7 +293,8 @@ bool NuSceneRenderer::render_scene_all(Nu::Scene &scene, Mat4x4 view, Mat4x4 pro
             glUniform3fv(diffuse_loc, 1, mt->diffuse().data());
             glUniform1f(ambient_power_loc, mt->power());
             glUniform1iv(drop_color_loc, 1, &m_drop_color);
-
+            glUniform1f(alpha_loc, mt->alpha());
+        
             glBindTexture(GL_TEXTURE_2D, m_texture_ids[mt->texture()]);
             for (Nu::GeometryPrimitive prim : part.get_primitives())
             {
