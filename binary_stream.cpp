@@ -1,4 +1,5 @@
 #include "binary_stream.h"
+#include <iostream>
 
 BinaryStream::BinaryStream()
 {
@@ -14,11 +15,12 @@ bool BinaryStream::open(const std::string &path) {
     std::streamsize size = stream.tellg();
     stream.seekg(0, std::ios::beg);
 
-    m_data.reserve(size + 1);
-    if (stream.read((char*) m_data.data(), size))
+    std::vector<uint8_t> bruh(size + 1);
+    if (stream.read((char*) bruh.data(), size))
     {
         m_size = size;
         m_is_open = true;
+        m_data = bruh;
         return true;
     }
     return false;
