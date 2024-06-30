@@ -5,6 +5,7 @@ build/
 cmake-build-debug/
 TWOC/
 .clang-format
+.vs/
 
 CMakeLists.txt.user
 CMakeCache.txt
