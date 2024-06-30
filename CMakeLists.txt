@@ -9,8 +9,12 @@ add_subdirectory("ext/portable-file-dialogs")
 set(LIBRARIES portable_file_dialogs)
 
 # opengl
-find_package(OpenGL REQUIRED)
-set(LIBRARIES ${LIBRARIES} ${OPENGL_LIBRARY})
+if(UNIX AND NOT APPLE)
+    find_package(OpenGL REQUIRED)
+    set(LIBRARIES ${LIBRARIES} ${OPENGL_LIBRARY})
+elseif (WIN32)
+    set(LIBRARIES opengl32)
+endif()
 
 # sfml
 include(FetchContent)
