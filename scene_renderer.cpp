@@ -294,8 +294,8 @@ bool NuSceneRenderer::render_scene_all(Nu::Scene &scene, Mat4x4 view, Mat4x4 pro
             glUniform1f(ambient_power_loc, mt->power());
             glUniform1iv(drop_color_loc, 1, &m_drop_color);
             glUniform1f(alpha_loc, mt->alpha());
-        
-            glBindTexture(GL_TEXTURE_2D, m_texture_ids[mt->texture()]);
+            if (mt->texture() != -1)
+                glBindTexture(GL_TEXTURE_2D, m_texture_ids[mt->texture()]);
             for (Nu::GeometryPrimitive prim : part.get_primitives())
             {
                 GLenum mode = (prim.get_type() == Nu::GeometryPrimitive::Type::tPrimTriStrip) ? GL_TRIANGLE_STRIP : GL_TRIANGLES;
