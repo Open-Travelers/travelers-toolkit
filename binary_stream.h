@@ -1,14 +1,19 @@
 #ifndef BINARY_STREAM_H
 #define BINARY_STREAM_H
 #include <string>
-#include <fstream>
-#include <stdint.h>
+#include <cstdint>
 #include <optional>
 #include <vector>
 
+class ReadableItem {
+public:
+    virtual void swap_endianness() = 0;
+    virtual size_t size() = 0;
+};
+
 class BinaryStream {
 public:
-    BinaryStream();
+    explicit BinaryStream(bool swap_endianness = false);
     ~BinaryStream();
     bool open(std::string const& path);
 public:
@@ -18,13 +23,28 @@ public:
     std::optional<float> read_float();
     std::optional<std::string> read_zero_terminated_string();
     std::optional<std::string> read_constant_length_string(size_t length);
+    
+    template<std::derived_from<ReadableItem> T>
+    std::optional<T> read_item()
+    {
+        T item;
+        // not protected by squat
+        if (read(sizeof(T), &item))
+            return std::make_optional(item);
+        
+        if (m_should_swap_endianness)
+            item.swap_endianness();
+        return std::nullopt;
+    }
+
     bool read(size_t size, uint8_t *output_buffer);
     
     void seek(int whence, long int offset);
     size_t tell();
     bool is_eof();
 protected:
-    std::string m_path;
+    bool m_should_swap_endianness { false };
+    std::string m_path { "" };
     bool m_is_open { false };
 
     size_t m_position { 0 };

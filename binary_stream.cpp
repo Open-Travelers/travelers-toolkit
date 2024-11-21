@@ -1,7 +1,8 @@
 #include "binary_stream.h"
 #include <iostream>
+#include <fstream>
 
-BinaryStream::BinaryStream()
+BinaryStream::BinaryStream(bool swap_endianness) : m_should_swap_endianness(swap_endianness)
 {
 
 }
@@ -15,12 +16,12 @@ bool BinaryStream::open(const std::string &path) {
     std::streamsize size = stream.tellg();
     stream.seekg(0, std::ios::beg);
 
-    std::vector<uint8_t> bruh(size + 1);
-    if (stream.read((char*) bruh.data(), size))
+    std::vector<uint8_t> buffer(size + 1);
+    if (stream.read((char*) buffer.data(), size))
     {
         m_size = size;
         m_is_open = true;
-        m_data = bruh;
+        m_data = buffer;
         return true;
     }
     return false;
