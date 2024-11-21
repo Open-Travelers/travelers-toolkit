@@ -1,5 +1,6 @@
 #include "mat4x4.h"
 #include <cmath>
+#include <stdexcept>
 Mat4x4::Mat4x4()
 {
     for (int i = 0; i < 16; i++)

@@ -5,8 +5,9 @@ set(CMAKE_CXX_STANDARD 23)
 set(CXX_STANDARD 23)
 
 # portable-file-dialogs
-add_subdirectory("ext/portable-file-dialogs")
+add_subdirectory(ext/portable-file-dialogs)
 set(LIBRARIES portable_file_dialogs)
+set(EXT_INCLUDES ext/portable-file-dialogs)
 
 # opengl
 if(UNIX AND NOT APPLE)
@@ -29,44 +30,47 @@ set(LIBRARIES
 # imgui
 set(SOURCES
         ${SOURCES}
-        "imgui-SFML.cpp"
-        "ext/imgui/imgui.cpp"
-        "ext/imgui/imgui_draw.cpp"
-        "ext/imgui/imgui_widgets.cpp"
-        "ext/imgui/imgui_tables.cpp")
-include_directories("ext/imgui")
+        src/imgui-SFML.cpp
+        ext/imgui/imgui.cpp
+        ext/imgui/imgui_draw.cpp
+        ext/imgui/imgui_widgets.cpp
+        ext/imgui/imgui_tables.cpp)
+include_directories(ext/imgui)
+set(EXT_INCLUDES ${EXT_INCLUDES} ext/imgui)
 
 # glad
 set(SOURCES
         ${SOURCES}
-        "ext/glad/src/glad.c" math/vec3.cpp)
-include_directories("ext/glad/include")
+        ext/glad/src/glad.c)
+include_directories(ext/glad/include)
+set(EXT_INCLUDES ${EXT_INCLUDES} ext/glad/include)
 
 # main program
 set(SOURCES
         ${SOURCES}
-        main.cpp 
-        application.cpp 
-        shader.cpp
-        binary_stream.cpp 
-        scene_renderer.cpp
-        imgui_impl_opengl3.cpp
-        nu/scene.cpp 
-        nu/texture.cpp 
-        nu/material.cpp 
-        nu/instance.cpp
-        nu/geometry_definition.cpp 
-        nu/geometry_part.cpp 
-        nu/geometry_primitive.cpp 
-        nu/vertex.cpp  
-        math/vec2.cpp 
-        math/vec3.cpp 
-        math/vec4.cpp 
-        math/mat4x4.h 
-        math/mat4x4.cpp
+        src/main.cpp
+        src/application.cpp
+        src/shader.cpp
+        src/binary_stream.cpp
+        src/scene_renderer.cpp
+        src/imgui_impl_opengl3.cpp
+        src/nu/scene.cpp
+        src/nu/texture.cpp
+        src/nu/material.cpp
+        src/nu/instance.cpp
+        src/nu/geometry_definition.cpp
+        src/nu/geometry_part.cpp
+        src/nu/geometry_primitive.cpp
+        src/nu/vertex.cpp
+        src/math/vec2.cpp
+        src/math/vec3.cpp
+        src/math/vec4.cpp
+        src/math/mat4x4.h
+        src/math/mat4x4.cpp
         )
 
 add_executable(ttoolkit ${SOURCES})
+target_include_directories(ttoolkit PUBLIC ${EXT_INCLUDES})
 target_link_libraries(ttoolkit PRIVATE ${LIBRARIES})
 
 # post build stuff

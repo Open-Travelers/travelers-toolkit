@@ -15,7 +15,7 @@ extern "C" {
 #include "math/vec3.h"
 #include "scene_renderer.h"
 
-#include "ext/portable-file-dialogs/portable-file-dialogs.h"
+#include <portable-file-dialogs.h>
 Application::Application() {
 
 }
