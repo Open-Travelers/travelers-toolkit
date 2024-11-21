@@ -24,6 +24,7 @@ public:
     Vec3 transform_vector(Vec3 const& source);
     Vec4 transform_vector(Vec4 const& source);
     Vec3 get_scale_vector();
+    Vec3 get_translation_vector();
 public:
     bool read(BinaryStream &stream);
 

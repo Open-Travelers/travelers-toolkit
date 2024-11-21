@@ -44,6 +44,10 @@ Vec3 Mat4x4::get_scale_vector()
 {
     return Vec3(m_data[0], m_data[5], m_data[10]);
 }
+Vec3 Mat4x4::get_translation_vector()
+{
+    return Vec3(m_data[3], m_data[7], m_data[11]);
+}
 Mat4x4 Mat4x4::Identity()
 {
     static const float data[] = {
