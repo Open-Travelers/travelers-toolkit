@@ -13,9 +13,12 @@ namespace Nu
         
         int get_geometry_object();
         Mat4x4 get_transform_matrix();
+        bool is_unused() { return m_is_unused; }
+        void set_unused() { m_is_unused = true; }
     protected:
         int m_geometry_object;
         Mat4x4 m_transform_matrix;
+        bool m_is_unused { false };
     };
 
 }

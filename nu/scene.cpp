@@ -184,7 +184,11 @@ namespace Nu {
             Mat4x4 transform = instance.get_transform_matrix();
             Vec4 scale_vec = transform.get_scale_vector();
             if (scale_vec.x() != 0 && scale_vec.y() != 0 && scale_vec.z() != 0)
+            {
                 bruh.insert(instance.get_geometry_object());
+            } else {
+                instance.set_unused();
+            }
         }
 
         bool unused = false;
@@ -194,13 +198,12 @@ namespace Nu {
             {
                 std::cout << "Found possibly unused geometry definition: " << std::to_string(i) << std::endl;
                 unused = true;
+                m_geometry_definitions[i].set_unused();
             }
         }
 
         if (!unused)
-        {
             std::cout << "Scene contains no unused geometry definitions." << std::endl;
-        }
 
         struct Bounds {
             Bounds(Vec3 _min, Vec3 _max) :min(_min), max(_max) { }
