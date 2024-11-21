@@ -61,6 +61,7 @@ int Application::run(int argc, char **argv) {
     float move_speed = 0.5f;
     float rot_speed = 0.1f;
     int txv_current_item = 0;
+    int inv_current_item = 0;
     bool ignore_color = false;
     std::vector<std::string> txv_items;
     while (window.isOpen())
@@ -248,6 +249,24 @@ exit:
             }
         }
         ImGui::End();
+
+        int old_item = inv_current_item;
+        if (ImGui::Begin("Instance Viewer"))
+        {
+            ImGui::ListBox("##Instance", &inv_current_item, [](void *user_data, int which) -> const char* {
+                Nu::Instance* inst = ((Nu::Instance*) user_data) + which;
+                if (inst->is_unused())
+                    return "Potentially Unused";
+                return "Used";
+            }, (void*) scene.get_instances().data(), scene.get_instances().size());
+        }
+        ImGui::End();
+
+        if (old_item != inv_current_item)
+        {
+            Nu::Instance* inst = ((Nu::Instance*) scene.get_instances().data()) + inv_current_item;
+            cam_pos = inst->get_transform_matrix().get_translation_vector();
+        }
         // render 3d
         glDisable(GL_CULL_FACE);
         glEnable(GL_DEPTH_TEST);
