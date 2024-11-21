@@ -20,5 +20,6 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 CMakeUserPresets.json
-
+imgui.ini
+nu2/
 .cache
