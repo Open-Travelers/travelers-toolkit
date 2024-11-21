@@ -16,9 +16,9 @@ static const GLchar* vertex_shader_src = \
         "void main() {\n"
         "    float r, g, b;\n"
         "    if (!u_drop_color) {\n"
-        "        r = ((l_color) & uint(0xff)) / 256.0;\n"
-        "        g = ((l_color >> 8) & uint(0xff)) / 256.0;\n"
-        "        b = ((l_color >> 16) & uint(0xff)) / 256.0;\n"
+        "        r = ((l_color >> 8) & uint(0xff)) / 256.0;\n"
+        "        g = ((l_color >> 16) & uint(0xff)) / 256.0;\n"
+        "        b = ((l_color >> 24) & uint(0xff)) / 256.0;\n"
         "    } else {\n"
         "        r = 1.0f;\n"
         "        g = 1.0f;\n"
@@ -296,6 +296,8 @@ bool NuSceneRenderer::render_scene_all(Nu::Scene &scene, Mat4x4 view, Mat4x4 pro
             glUniform1f(alpha_loc, mt->alpha());
             if (mt->texture() != -1)
                 glBindTexture(GL_TEXTURE_2D, m_texture_ids[mt->texture()]);
+            else
+                glBindTexture(GL_TEXTURE_2D, 0);
             for (Nu::GeometryPrimitive prim : part.get_primitives())
             {
                 GLenum mode = (prim.get_type() == Nu::GeometryPrimitive::Type::tPrimTriStrip) ? GL_TRIANGLE_STRIP : GL_TRIANGLES;
