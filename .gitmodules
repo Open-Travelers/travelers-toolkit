@@ -5,3 +5,9 @@
 [submodule "ext/portable-file-dialogs"]
 	path = ext/portable-file-dialogs
 	url = https://github.com/samhocevar/portable-file-dialogs
+[submodule "ext/vfspp"]
+	path = ext/vfspp
+	url = https://github.com/nextgeniuspro/vfspp.git
+[submodule "ext/glm"]
+	path = ext/glm
+	url = https://github.com/g-truc/glm

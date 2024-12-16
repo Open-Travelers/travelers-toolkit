@@ -9,6 +9,12 @@ add_subdirectory(ext/portable-file-dialogs)
 set(LIBRARIES portable_file_dialogs)
 set(EXT_INCLUDES ext/portable-file-dialogs)
 
+# vfspp
+add_subdirectory(ext/vfspp vfspp_build)
+set(LIBRARIES 
+        ${LIBRARIES}
+        vfspp)
+
 # opengl
 if(UNIX AND NOT APPLE)
     find_package(OpenGL REQUIRED)
@@ -38,11 +44,17 @@ set(SOURCES
 include_directories(ext/imgui)
 set(EXT_INCLUDES ${EXT_INCLUDES} ext/imgui)
 
+# glm
+add_subdirectory(ext/glm)
+set(LIBRARIES 
+        ${LIBRARIES}
+        glm::glm)
+set(EXT_INCLUDES ${EXT_INCLUDES} ext/glm)
+
 # glad
 set(SOURCES
         ${SOURCES}
         ext/glad/src/glad.c)
-include_directories(ext/glad/include)
 set(EXT_INCLUDES ${EXT_INCLUDES} ext/glad/include)
 
 # main program
@@ -50,23 +62,15 @@ set(SOURCES
         ${SOURCES}
         src/main.cpp
         src/application.cpp
-        src/shader.cpp
-        src/binary_stream.cpp
-        src/scene_renderer.cpp
         src/imgui_impl_opengl3.cpp
-        src/nu/scene.cpp
-        src/nu/texture.cpp
-        src/nu/material.cpp
-        src/nu/instance.cpp
-        src/nu/geometry_definition.cpp
-        src/nu/geometry_part.cpp
-        src/nu/geometry_primitive.cpp
-        src/nu/vertex.cpp
-        src/math/vec2.cpp
-        src/math/vec3.cpp
-        src/math/vec4.cpp
-        src/math/mat4x4.h
-        src/math/mat4x4.cpp
+        
+        src/ui/types.h 
+        src/ui/manager.h 
+        src/ui/manager.cpp
+
+        src/filesystems/gamecube_iso_filesystem.h
+        src/filesystems/ps2_iso_filesystem.h
+        src/filesystems/xbox_iso_filesystem.h
         )
 
 add_executable(ttoolkit ${SOURCES})
