@@ -1,6 +1,5 @@
 
-#ifndef EVENT_TYPES_H
-#define EVENT_TYPES_H
+#pragma once 
 
 namespace UI {
 
@@ -123,4 +122,3 @@ enum class Key {
 };
 
 }
-#endif

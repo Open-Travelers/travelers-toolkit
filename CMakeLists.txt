@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 project(ttoolkit)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CXX_STANDARD 23)
 
@@ -8,12 +9,6 @@ set(CXX_STANDARD 23)
 add_subdirectory(ext/portable-file-dialogs)
 set(LIBRARIES portable_file_dialogs)
 set(EXT_INCLUDES ext/portable-file-dialogs)
-
-# vfspp
-add_subdirectory(ext/vfspp vfspp_build)
-set(LIBRARIES 
-        ${LIBRARIES}
-        vfspp)
 
 # opengl
 if(UNIX AND NOT APPLE)
@@ -61,20 +56,88 @@ set(EXT_INCLUDES ${EXT_INCLUDES} ext/glad/include)
 set(SOURCES
         ${SOURCES}
         src/main.cpp
+        src/platform.h
+        src/application.h
         src/application.cpp
         src/imgui_impl_opengl3.cpp
-        
+
+        src/shader.h
+        src/shader.cpp
+        src/file_binary_reader.h
+        src/file_binary_reader.cpp
+
+        src/twoc/reader_item.h
+
+        src/twoc/binary_reader.h
+        src/twoc/binary_reader.cpp
+        src/twoc/executable.h
+        src/twoc/executable.cpp
+        src/twoc/executable_elf.cpp
+        src/twoc/level_data.h
+        src/twoc/level_data.cpp
+        src/twoc/level.h
+        src/twoc/level.cpp
+        src/twoc/elf/file.h
+        src/twoc/elf/file.cpp
+        src/twoc/elf/header.h
+        src/twoc/elf/header.cpp
+        src/twoc/elf/program_header.h
+        src/twoc/elf/program_header.cpp
+        src/twoc/elf/section_header.h
+        src/twoc/elf/section_header.cpp
+        src/twoc/elf/symbol.h
+        src/twoc/elf/symbol.cpp
+        src/twoc/crt/crate_group.h
+        src/twoc/crt/crate_group.cpp
+        src/twoc/crt/crate_store.h
+        src/twoc/crt/crate_store.cpp
+        src/twoc/crt/crate.h
+        src/twoc/crt/crate.cpp
+        src/twoc/nu/instance.h
+        src/twoc/nu/instance.cpp
+        src/twoc/nu/material.h
+        src/twoc/nu/material.cpp
+        src/twoc/nu/texture.h
+        src/twoc/nu/texture.cpp
+        src/twoc/nu/vertex.h
+        src/twoc/nu/vertex.cpp
+        src/twoc/nu/scene.h
+        src/twoc/nu/scene.cpp
+
         src/ui/types.h 
-        src/ui/manager.h 
+        src/ui/window.h
+        src/ui/manager.h
         src/ui/manager.cpp
+        src/ui/view.h 
+        src/ui/view.cpp 
 
-        src/filesystems/gamecube_iso_filesystem.h
-        src/filesystems/ps2_iso_filesystem.h
-        src/filesystems/xbox_iso_filesystem.h
-        )
+        src/application_project.h
+        src/application_project.cpp
+        src/application_data.h
 
-add_executable(ttoolkit ${SOURCES})
-target_include_directories(ttoolkit PUBLIC ${EXT_INCLUDES})
+        src/views/welcome/welcome_view.h
+        src/views/welcome/welcome_view.cpp 
+)
+
+add_executable(ttoolkit ${SOURCES}
+    src/twoc/character_data.h
+    src/twoc/character_data.cpp
+    src/memory_binary_reader.h
+    src/memory_binary_reader.cpp
+    src/twoc/dat/file.h
+    src/twoc/nu/special_object.h
+    src/twoc/nu/spline.h
+    src/twoc/nu/spline.cpp
+    src/twoc/nu/mesh_primitive.h
+    src/twoc/nu/mesh_primitive.cpp
+    src/twoc/nu/mesh.h
+    src/twoc/nu/mesh.cpp
+    src/twoc/nu/geometry_object.h
+    src/twoc/nu/geometry_object.cpp
+    src/twoc/dat/file.cpp
+    src/twoc/dat/file_header.h
+    src/twoc/dat/file_header.cpp)
+target_include_directories(ttoolkit PUBLIC src/ ${EXT_INCLUDES})
 target_link_libraries(ttoolkit PRIVATE ${LIBRARIES})
 
 # post build stuff

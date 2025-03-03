@@ -2,17 +2,29 @@ extern "C" {
 #include <glad/glad.h>
 }
 #include <SFML/OpenGL.hpp>
+#include <cstring>
 #include <iostream>
 #include <imgui.h>
 #include <cmath>
+#include <portable-file-dialogs.h>
+#include <filesystem>
+#include <regex>
+#include <algorithm>
+#include <cctype>
 
-#include "application.h"
+#include "file_binary_reader.h"
+#include "twoc/executable.h"
 #include "imgui-SFML.h"
 #include "imgui_impl_opengl3.h"
-#include <portable-file-dialogs.h>
 
-Application::Application() {
+#include "views/welcome/welcome_view.h"
+#include "application.h"
 
+static constexpr int WINDOW_WIDTH = 1280;
+static constexpr int WINDOW_HEIGHT = 768; 
+Application::Application() 
+{
+    m_ui.add_view(std::make_shared<WelcomeView>(m_data));
 }
 
 Application::~Application() {
@@ -27,9 +39,16 @@ int Application::run(int argc, char **argv) {
         return 1;
     }
 
+    std::string twoc_root = pfd::select_folder("Select extracted game root...").result();
+    if (twoc_root.empty())
+        return 1;
+
+    if (!m_data.Project.load(twoc_root))
+        return 1;
+
     // initialize window and opengl
     sf::ContextSettings settings(16, 8, 4, 4, 3, sf::ContextSettings::Attribute::Core | sf::ContextSettings::Attribute::Debug);
-    sf::RenderWindow window(sf::VideoMode(1280, 768), "Traveler's Toolkit", sf::Style::Default, settings);
+    sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Traveler's Toolkit", sf::Style::Default, settings);
     gladLoadGLLoader(reinterpret_cast<GLADloadproc>(sf::Context::getFunction));
     window.setFramerateLimit(0);
     
@@ -37,6 +56,11 @@ int Application::run(int argc, char **argv) {
     if (!ImGui::SFML::Init(window))
         return 1;
     ImGui_ImplOpenGL3_Init();
+//    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+    m_ui.do_resize(WINDOW_WIDTH, WINDOW_HEIGHT);
+    m_ui.change_view(0);
+    float dt = 0.f;
 
     sf::Clock delta_clock;   
     while (window.isOpen())
@@ -45,6 +69,7 @@ int Application::run(int argc, char **argv) {
         ImGuiIO &io = ImGui::GetIO();
         for (sf::Event event; window.pollEvent(event);)
         {
+            ImGui::SFML::ProcessEvent(window, event);
             if (event.type == sf::Event::Closed)
             {
                 window.close();
@@ -58,7 +83,6 @@ int Application::run(int argc, char **argv) {
                     event.type == sf::Event::MouseLeft || 
                     event.type == sf::Event::MouseMoved)
             {
-                ImGui::SFML::ProcessEvent(window, event);
                 if (!io.WantCaptureMouse)
                 {
                     if (event.type == sf::Event::MouseButtonPressed)
@@ -74,14 +98,12 @@ int Application::run(int argc, char **argv) {
                 }
             } else if (event.type == sf::Event::MouseWheelScrolled)
             {
-                ImGui::SFML::ProcessEvent(window, event);
                 if (!io.WantCaptureMouse)
                 {
                     m_ui.do_mouse_moved(event.mouseWheelScroll.wheel == sf::Mouse::HorizontalWheel, event.mouseWheelScroll.delta);
                 }
             } else if (event.type == sf::Event::KeyPressed || event.type == sf::Event::KeyReleased)
             {
-                ImGui::SFML::ProcessEvent(window, event);
                 if (!io.WantCaptureKeyboard)
                 {
                     if (event.type == sf::Event::KeyPressed)
@@ -94,7 +116,6 @@ int Application::run(int argc, char **argv) {
                 }                
             } else if (event.type == sf::Event::TextEntered)
             {
-                ImGui::SFML::ProcessEvent(window, event);
                 if (!io.WantCaptureKeyboard)
                 {
                     m_ui.do_char_write(event.text.unicode);
@@ -104,7 +125,7 @@ int Application::run(int argc, char **argv) {
 
         // update imgui state
         sf::Time elapsed = delta_clock.restart();
-        float dt = elapsed.asSeconds();
+        dt = elapsed.asSeconds();
 
         ImGui::SFML::Update(window, elapsed);
         ImGui_ImplOpenGL3_NewFrame();
