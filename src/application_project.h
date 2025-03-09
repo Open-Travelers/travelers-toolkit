@@ -28,7 +28,7 @@ public:
     bool load(std::string const& directory);
     void unload();
 
-    FileBinaryReader find_file(std::filesystem::path const& path);
+    bool find_file(std::filesystem::path const& path, FileBinaryReader &reader);
 
     bool does_level_exist(int index);
     Twoc::Executable const* executable() const { return m_executable; }

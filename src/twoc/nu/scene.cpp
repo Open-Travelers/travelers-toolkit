@@ -1,7 +1,7 @@
 #include "scene.h"
 #include "texture.h"
 #include "twoc/nu/vertex.h"
-#include "twoc/nu/mesh_primitive.h"
+#include "twoc/nu/primitive.h"
 #include <glm/vec3.hpp>
 
 #define BLK_CSG0 (0x30435347)
@@ -15,7 +15,7 @@
 #define BLK_SST0 (0x30545353)
 #define BLK_SPEC (0x43455053)
 #define BLK_ALIB (0x42494C41)
-
+#define BLK_TAS0 (0x30534154)
 namespace Twoc::Nu
 {
 
@@ -124,7 +124,22 @@ bool Scene::read_texture_set(Twoc::BinaryReader &reader)
             return false;
         }
     }
+    m_block_size[0] = 0;
+    m_block_offset[0] = reader.tell();
+    m_textures = textures;
     return reader.status() != Twoc::ReaderStatus::Error;
+}
+
+bool Scene::read_texture_animation_set(Twoc::BinaryReader &reader)
+{
+    uint32_t texture_animations = reader.u32();
+    (void) reader.u32();
+    (void) reader.seek(ReaderBase::Current, texture_animations * 32);
+
+    uint32_t texture_id_count = reader.u32();
+    std::vector<uint16_t> texture_ids = reader.array<uint16_t>(texture_id_count);
+    (void) texture_ids;
+    return true;
 }
 
 bool Scene::read_material_set(Twoc::BinaryReader &reader)
@@ -191,13 +206,13 @@ bool Scene::read_instance_set(Twoc::BinaryReader &reader)
     std::vector<Instance> instances;
     for (int i = 0; i < count; i++)
     {
-        Instance instance;
+        InstanceRaw instance;
         if (!instance.read(reader))
         {
             std::cerr << "Failed to read instance " << i << std::endl;
             return false;
         }
-        instances.push_back(instance);
+        instances.push_back(Instance(instance));
     }
 
     m_instances = instances;
@@ -296,6 +311,9 @@ bool Scene::read(Twoc::BinaryReader &reader, size_t fullsize)
         case BLK_ALIB:
             result = read_animation_library(reader);
             break;
+        case BLK_TAS0:
+            result = read_texture_animation_set(reader);
+            break;
         default:
             std::cerr << "Unknown level-1 header: " << std::to_string(block) << "!" << std::endl;
             return false;
@@ -308,6 +326,8 @@ bool Scene::read(Twoc::BinaryReader &reader, size_t fullsize)
         }
         end_block(reader);
     }
+
+    std::cout << m_textures.size() << std::endl;
     return true;
 }
 

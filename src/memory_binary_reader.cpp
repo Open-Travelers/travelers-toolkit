@@ -1,4 +1,5 @@
 #include <cstring>
+#include <iostream>
 #include "memory_binary_reader.h"
 
 MemoryBinaryReader::MemoryBinaryReader(Twoc::ReaderEndianness endianness) : Twoc::BinaryReader(endianness) { }
@@ -15,8 +16,10 @@ void MemoryBinaryReader::check_eof()
 bool MemoryBinaryReader::read_buffer(std::uint8_t *buffer, size_t size)
 {
     size_t actual_size = std::min(size, m_buffer_size - m_cursor);
-    std::memcpy((void*) buffer, (const void*) m_buffer, actual_size);
+    std::memcpy((void*) buffer, (const void*) (m_buffer + m_cursor), actual_size);
+    m_cursor += actual_size;
     check_eof();
+
     return size == actual_size;
 }
 

@@ -3,20 +3,30 @@
 #include "../../ui/view.h"
 #include "../../application_project.h"
 #include "../../application_data.h"
+#include "twoc/nu/scene.h"
+#include "scene_renderer.h"
+#include "camera.h"
 
 class WelcomeView : public UI::View {
 protected:
-    char m_iso_path[PATH_MAX];
+    Twoc::Nu::Scene *m_scene { nullptr };
+    Twoc::Nu::Scene *m_crate_scene { nullptr };
+    Twoc::Nu::Scene *m_wumpa_scene { nullptr };
+    SceneRenderer m_renderer;
+    Camera m_camera;
+    glm::mat4 m_projection_matrix;
+
+    bool load_scenes();
+
+    void on_load(int display_width, int display_height) override;
+    UI::ViewChange on_unload() override;
+
+    void on_resize(int width, int height) override;
+    void on_update(float dt) override;
+    void on_render() override;
 
 public:
     WelcomeView(ApplicationData &app);
     ~WelcomeView() override;
-    ApplicationProject m_project;
 
-protected:
-    void on_load(int display_width, int display_height) override;
-    UI::ViewChange on_unload() override;
-
-    void on_update(float dt) override;
-    void on_render() override;
 };

@@ -103,9 +103,8 @@ bool ApplicationProject::load(const std::string &directory)
     return true;
 }
 
-FileBinaryReader find_file(std::filesystem::path const& path)
+bool ApplicationProject::find_file(std::filesystem::path const& path, FileBinaryReader &reader)
 {
-    /*
     std::filesystem::path fixed_path(std::regex_replace(path.string(), std::regex("\\\\"), "/"));
     fixed_path = fixed_path.make_preferred();
 
@@ -113,14 +112,15 @@ FileBinaryReader find_file(std::filesystem::path const& path)
     fixed_path = fixed_path.remove_filename();
 
     std::filesystem::path full_path = m_root_path / fixed_path;
-    FileBinaryReader reader;
-    std::transform(file_name.begin(), file_name.end(), file_name.begin(), ::tolower);
-    if (!reader.open((full_path / file_name)))
-    {
-        reader.open(full_path);
-    }
-*/
 
+    std::transform(file_name.begin(), file_name.end(), file_name.begin(), ::tolower);
+    if (!reader.open(full_path / file_name))
+    {
+        std::transform(file_name.begin(), file_name.end(), file_name.begin(), ::toupper);
+        reader.open(full_path / file_name);
+    }
+
+    return reader.status() != Twoc::ReaderStatus::Error;
 }
 
 void ApplicationProject::unload()

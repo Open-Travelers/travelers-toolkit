@@ -2,16 +2,23 @@
 #include <portable-file-dialogs.h>
 #include <stdexcept>
 #include <string>
+#include <sstream>
 #include <filesystem>
 #include <vector>
 #include <cstdlib>
+#include <glad/glad.h>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/matrix_access.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
-#include "glad/glad.h"
 #include "file_binary_reader.h"
 #include "twoc/nu/scene.h"
 #include "twoc/dat/file.h"
+
 #include "welcome_view.h"
-WelcomeView::WelcomeView(ApplicationData &app) : UI::View(app)
+
+WelcomeView::WelcomeView(ApplicationData &app) : UI::View(app),
+    m_camera(glm::vec3 { 0, 0, 0 }, glm::vec3 { 0, 0, 5 }), m_projection_matrix(glm::perspectiveFov(glm::radians<float>(90.f), 1280.f, 768.f, 0.01f, 100.f))
 {
 
 }
@@ -21,9 +28,59 @@ WelcomeView::~WelcomeView()
     
 }
 
+bool WelcomeView::load_scenes()
+{
+    if (m_crate_scene)
+        delete m_crate_scene;
+    m_crate_scene = nullptr;
+
+    if (m_wumpa_scene)
+        delete m_wumpa_scene;
+    m_wumpa_scene = nullptr;
+
+    FileBinaryReader crate_reader(m_app.Project.endianness());
+    if (m_app.Project.find_file("stuff\\crates.nus", crate_reader))
+    {
+        m_crate_scene = Twoc::Nu::Scene::from_reader(crate_reader);
+        if (!m_crate_scene)
+        {
+            std::cerr << "Could not read crate file!" << std::endl;
+            return false;
+        }
+    } else {
+        std::cerr << "Could not find crate file!" << std::endl;
+        return false;
+    }
+
+    FileBinaryReader wumpa_reader(m_app.Project.endianness());
+    if (m_app.Project.find_file("stuff\\wumpa.nus", wumpa_reader))
+    {
+        m_wumpa_scene = Twoc::Nu::Scene::from_reader(wumpa_reader);
+        if (!m_wumpa_scene)
+        {
+            std::cerr << "Could not read wumpa file!" << std::endl;
+            delete m_crate_scene;
+            m_crate_scene = nullptr;
+            return false;
+        }
+    } else {
+        std::cerr << "Could not find wumpa file!" << std::endl;
+        delete m_crate_scene;
+        m_crate_scene = nullptr;
+        return false;
+    }
+    return true;
+}
 void WelcomeView::on_load(int width, int height)
 {
+    load_scenes();
 
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CCW);
+    glCullFace(GL_BACK);
 }
 
 UI::ViewChange WelcomeView::on_unload()
@@ -36,10 +93,22 @@ void WelcomeView::on_update(float dt)
 
 }
 
+void WelcomeView::on_resize(int width, int height)
+{
+    m_projection_matrix = glm::perspectiveFov(glm::radians(90.f), (float)width, (float)height, 0.01f, 100.f);
+    glViewport(0, 0, width, height);
+}
+
+static std::vector<std::string> texture_names;
 void WelcomeView::on_render()
 {
+    static int texture_selected = -1;
+
     glClearColor(0.1f, 0.1f, 0.1f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
+
+    //if (m_scene)
+    //    m_renderer.render(m_camera.view_matrix(), m_projection_matrix);
 
     if (ImGui::BeginMainMenuBar())
     {
@@ -56,6 +125,7 @@ void WelcomeView::on_render()
                         (void) pfd::message("Fatal", "Couldn't load game root!", pfd::choice::ok, pfd::icon::error);
                         exit(1);
                     }
+                    load_scenes();
                 }
             }
             ImGui::EndMenu();
@@ -88,47 +158,41 @@ void WelcomeView::on_render()
                     {
                         if (ImGui::Button("Load Level"))
                         {
-                            std::filesystem::path scene_path = m_app.Project.root_path() / "levels";
-                            std::filesystem::path level_path(std::regex_replace(lvl.Filepath, std::regex("\\\\"), "/"));
-                            level_path = level_path.make_preferred();
+                            std::filesystem::path level_path("levels\\" + lvl.Filepath);
 
-                            std::string level_name = level_path.filename().string();
-                            level_path = level_path.remove_filename();
+                            std::filesystem::path scene_path = level_path;
+                            scene_path += ".nus";
 
-                            std::filesystem::path full_path = (scene_path / level_path / level_name);
-
-                            Twoc::Nu::Scene *scene = nullptr;
-                            // attempt #1 - lowercase filename
+                            FileBinaryReader scene_reader(m_app.Project.endianness());
+                            if (!m_app.Project.find_file(scene_path, scene_reader))
                             {
-                                std::transform(level_name.begin(), level_name.end(), level_name.begin(), ::tolower);
-                                full_path += ".nus";
+                                std::cerr << "Path '" << scene_path << "' doesn't exist!" << std::endl;
+                            } else {
+                                Twoc::Nu::Scene *scene = Twoc::Nu::Scene::from_reader(scene_reader);
+                                if (scene == nullptr)
+                                {
+                                    (void) pfd::message("Error", "Could not load scene!", pfd::choice::ok, pfd::icon::error);
+                                } else {
+                                    if (!m_renderer.load(scene))
+                                    {
+                                        (void) pfd::message("Error", "Could not load scene into renderer!", pfd::choice::ok, pfd::icon::error);
+                                    } else {
+                                        if (m_scene != nullptr)
+                                            delete m_scene;
+                                        m_scene = scene;
 
-                                FileBinaryReader reader(m_app.Project.endianness());
-                                if (reader.open(full_path))
-                                    scene = Twoc::Nu::Scene::from_reader(reader);
-                                else
-                                    std::cerr << "Lowercase path '" << full_path << "' doesn't exist!" << std::endl;
+                                        texture_names.clear();
+                                        for (size_t i = 0; i < m_scene->texture_count(); i++)
+                                        {
+                                            auto const& tex = m_scene->texture(i);
+                                            std::stringstream str;
+                                            str << "Texture " << i << ": " << tex.max_width() << "x" << tex.max_height() << " #" << tex.type();
+                                            texture_names.push_back(str.str());
+                                        }
+                                        texture_selected = -1;
+                                    }
+                                }
                             }
-
-                            // attempt #2 - uppercase filename
-                            if (scene == nullptr) {
-                                std::transform(level_name.begin(), level_name.end(), level_name.begin(), ::toupper);
-                                std::filesystem::path full_path = (scene_path / level_path / level_name);
-                                full_path += ".NUS";
-
-                                FileBinaryReader reader(m_app.Project.endianness());
-                                if (reader.open(full_path))
-                                    scene = Twoc::Nu::Scene::from_reader(reader);
-                                else
-                                    std::cerr << "Uppercase path '" << full_path << "' doesn't exist!" << std::endl;
-                            }
-
-                            if (scene == nullptr)
-                            {
-                                (void) pfd::message("Fatal", "Could not load scene!", pfd::choice::ok, pfd::icon::error);
-                            }
-
-
                         }
                     }
 
@@ -215,7 +279,7 @@ void WelcomeView::on_render()
                     std::cerr << "Failure reading dat file" << std::endl;
             }
         }
-        if (ImGui::TreeNodeEx("1#Root", ImGuiTreeNodeFlags_SpanFullWidth))
+        if (ImGui::TreeNodeEx("Root##2", ImGuiTreeNodeFlags_SpanFullWidth))
         {
             int i = 0;
             for (auto &character : m_app.Project.executable()->character_data())
@@ -249,4 +313,101 @@ void WelcomeView::on_render()
         }
     }
     ImGui::End();
+
+    if (m_scene != nullptr)
+    {
+        if (ImGui::Begin("Scene"))
+        {
+            if (ImGui::TreeNodeEx("Geometry Objects"))
+            {
+                int i = 0;
+                for (auto const& object : m_scene->geometry_objects())
+                {
+                    ImGui::PushID(i);
+                    glm::vec3 origin = object.origin();
+                    auto origin_data = glm::value_ptr(origin);
+                    auto const& meshes = object.meshes();
+
+                    if (ImGui::TreeNode("Geometry Object"))
+                    {
+                        ImGui::InputFloat3("Origin", origin_data);
+                        int j = 0;
+                        for (auto const& mesh : meshes)
+                        {
+                            uint32_t material = mesh.material();
+                            auto const& primitives = mesh.primitives();
+                            auto const& vertices = mesh.vertices();
+
+                            ImGui::PushID(j);
+                            if (ImGui::TreeNode("Mesh"))
+                            {
+                                ImGui::InputScalar("Material", ImGuiDataType_U32, &material);
+                                ImGui::TreePop();
+                            }
+                            ImGui::PopID();
+                            j++;
+                        }
+                        ImGui::TreePop();
+                    }
+                    ImGui::PopID();
+                    i++;
+                }
+                ImGui::TreePop();
+            }
+            if (ImGui::TreeNodeEx("Instances"))
+            {
+                int i = 0;
+                for (auto const& instance : m_scene->instances())
+                {
+                    ImGui::PushID(i);
+
+                    if (ImGui::TreeNode("Instance"))
+                    {
+                        uint32_t object_index = instance.object_index();
+                        uint16_t room_group = instance.room_group();
+                        Twoc::Nu::InstanceFlags flags = instance.flags();
+                        uint8_t special = instance.special_flag();
+                        glm::mat4 transform_matrix = instance.transform_matrix();
+
+                        ImGui::InputScalar("Geometry Object", ImGuiDataType_U32, &object_index);
+                        ImGui::InputScalar("Room Group", ImGuiDataType_U16, &room_group);
+                        ImGui::InputScalar("Flags", ImGuiDataType_U32, &flags);
+                        ImGui::InputScalar("Special Flag", ImGuiDataType_U8, &special);
+                        for (int row = 0; row < 4; row++)
+                        {
+                            glm::vec4 row_vector = glm::row(transform_matrix, row);
+                            auto row_data = glm::value_ptr(row_vector);
+                            ImGui::InputFloat4("##Matrix", row_data);
+                        }
+
+                        ImGui::TreePop();
+                    }
+                    ImGui::PopID();
+                    i++;
+                }
+                ImGui::TreePop();
+            }
+        }
+        ImGui::End();
+
+        if (ImGui::Begin("Texture Viewer"))
+        {
+            if (m_scene->texture_count() == 0)
+            {
+                ImGui::Text("No scene loaded");
+            } else {
+                ImGui::ListBox("##LstTextures", &texture_selected, [](void *user_data, int which) -> const char* {
+                    return texture_names[which].c_str();
+                }, nullptr, m_scene->texture_count());
+
+                if (texture_selected >= 0)
+                {
+                    ImGui::BeginChild("ImgTexture");
+                    ImGui::Image((ImTextureID)m_renderer.get_texture(texture_selected), ImVec2(128, 128));
+                    ImGui::EndChild();
+                }
+            }
+        }
+        ImGui::End();
+    }
 }

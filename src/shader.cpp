@@ -1,27 +1,103 @@
-#include "shader.h"
 #include <iostream>
+#include <sstream>
+#include <fstream>
+#include "shader.h"
 
-Shader::Shader(const GLchar *vtx_source, const GLchar* frag_source)
+Shader::Shader()
 {
-    m_vertex_source = vtx_source;
-    m_fragment_source = frag_source;
+
 }
+
 Shader::~Shader()
 {
-    if (m_initialized)
+    unload();
+}
+
+void Shader::unload()
+{
+    if (m_shader_program != 0)
         glDeleteProgram(m_shader_program);
 }
+
 void Shader::bind()
 {
-    if (!m_initialized)
+    if (m_shader_program != 0)
         return;
     glUseProgram(m_shader_program);
 }
-bool Shader::initialize()
+
+static std::string collect_shader(std::ifstream &file, bool &error) {
+    std::stringstream stream;
+    int line_no = 1;
+    for (std::string line; std::getline(file, line);) {
+        if (line.rfind("//!", 0) == 0) {
+            line = line.erase(0, 3);
+            if (line.rfind("include ", 0) == 0) {
+                line = line.erase(0, 8);
+                line_no++;
+
+                std::ifstream new_file(line);
+                if (!new_file.is_open()) {
+                    stream.str("");
+                    stream << "Could not open file: '" << line << "'!" << std::endl;
+                    error = true;
+                    return stream.str();
+                }
+                stream << collect_shader(new_file, error) << std::endl;
+                stream << "#line " << line_no << std::endl;
+            }
+        } else {
+            stream << line << std::endl;
+            line_no++;
+        }
+    }
+    return stream.str();
+}
+
+bool Shader::load(std::string const& vertex_shader_path, std::string const& fragment_shader_path)
 {
+    if (m_shader_program != 0)
+    {
+        std::cerr << "Shader already loaded!" << std::endl;
+        return true;
+    }
+
+    // collect vertex shader from file
+    std::ifstream vtx_stream(vertex_shader_path);
+    if (!vtx_stream.is_open())
+    {
+        std::cerr << "Vertex shader file '" << vertex_shader_path << "' doesn't exist!" << std::endl;
+        return false;
+    }
+
+    bool vtx_error = false;
+    std::string vtx_source = collect_shader(vtx_stream, vtx_error);
+    if (vtx_error)
+    {
+        std::cerr << "Failed to collect vertex shader: " << vtx_source << "!" << std::endl;
+        return false;
+    }
+
+    // collect fragment shader from file
+    std::ifstream frag_stream(fragment_shader_path);
+    if (!frag_stream.is_open())
+    {
+        std::cerr << "Fragment shader file '" << fragment_shader_path << "' doesn't exist!" << std::endl;
+        return false;
+    }
+
+    bool frag_error = false;
+    std::string frag_source = collect_shader(frag_stream, frag_error);
+    if (frag_error)
+    {
+        std::cerr << "Failed to collect fragment shader: " << frag_source << "!" << std::endl;
+        return false;
+    }
+
     // create vertex shader
+    const char *vtx_raw = vtx_source.c_str();
     GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex_shader, 1, &m_vertex_source, nullptr);
+    glShaderSource(vertex_shader, 1, &vtx_raw, nullptr);
     glCompileShader(vertex_shader);
 
     // check for compilation errors
@@ -38,8 +114,9 @@ bool Shader::initialize()
     success = 0;
 
     // create fragment shader
+    const char* frag_raw = frag_source.c_str();
     GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment_shader, 1, &m_fragment_source, NULL);
+    glShaderSource(fragment_shader, 1, &frag_raw, NULL);
     glCompileShader(fragment_shader);
 
     // check for compilation errors
@@ -71,14 +148,12 @@ bool Shader::initialize()
         glDeleteShader(vertex_shader);
         glDeleteProgram(shader_program);
         return false;
-
     }
 
     // delete shaders and return success
     glDeleteShader(fragment_shader);
     glDeleteShader(vertex_shader);
     m_shader_program = shader_program;
-    m_initialized = true;
     return true;
 }
 

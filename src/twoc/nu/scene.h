@@ -40,19 +40,25 @@ public:
 
     std::string nametable_entry(int i);
 
-    Texture const& texture(int i) { return m_textures[i]; }
+    std::vector<Texture> const& textures() const { return m_textures; }
+    Texture const& texture(int i) const { return m_textures[i]; }
     size_t texture_count() const { return m_textures.size(); }
 
-    Material const& material(int i) { return m_materials[i]; }
+    std::vector<Material> const& materials() const { return m_materials; }
+    Material const& material(int i) const { return m_materials[i]; }
     size_t material_count() const { return m_materials.size(); }
 
-    Instance const& instance(int i) { return m_instances[i]; }
+    std::vector<Instance> const& instances() const { return m_instances; }
+    Instance const& instance(int i) const { return m_instances[i]; }
     size_t instance_count() const { return m_instances.size(); }
 
-    Spline const& spline(int i) { return m_splines[i]; }
+    std::vector<Spline> splines() const { return m_splines; }
+    Spline const& spline(int i) const { return m_splines[i]; }
     size_t spline_count() const { return m_splines.size(); }
 
-    std::vector<GeometryObject> const& geometry_objects() { return m_geometry_objects; }
+    std::vector<GeometryObject> const& geometry_objects() const { return m_geometry_objects; }
+    GeometryObject const& geometry_object(int i) const { return m_geometry_objects[i]; }
+    size_t geometry_object_count() const { return m_geometry_objects.size(); }
 
     size_t spline_find(std::string const& name)
     {
@@ -78,6 +84,7 @@ protected:
     bool read_spline_set(Twoc::BinaryReader &reader);
     bool read_special_objects(Twoc::BinaryReader &reader);
     bool read_animation_library(Twoc::BinaryReader &reader);
+    bool read_texture_animation_set(Twoc::BinaryReader &reader);
 };
 
 }

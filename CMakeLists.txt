@@ -128,15 +128,19 @@ add_executable(ttoolkit ${SOURCES}
     src/twoc/nu/special_object.h
     src/twoc/nu/spline.h
     src/twoc/nu/spline.cpp
-    src/twoc/nu/mesh_primitive.h
-    src/twoc/nu/mesh_primitive.cpp
+    src/twoc/nu/primitive.h
+    src/twoc/nu/primitive.cpp
     src/twoc/nu/mesh.h
     src/twoc/nu/mesh.cpp
     src/twoc/nu/geometry_object.h
     src/twoc/nu/geometry_object.cpp
     src/twoc/dat/file.cpp
     src/twoc/dat/file_header.h
-    src/twoc/dat/file_header.cpp)
+    src/twoc/dat/file_header.cpp
+    src/scene_renderer.h
+    src/scene_renderer.cpp
+    src/camera.h
+    src/camera.cpp)
 target_include_directories(ttoolkit PUBLIC src/ ${EXT_INCLUDES})
 target_link_libraries(ttoolkit PRIVATE ${LIBRARIES})
 

@@ -17,8 +17,8 @@ public:
     bool read(Twoc::BinaryReader &reader, size_t fullsize = 0) override;
     size_t size() override { return 0; }
 
-    glm::vec3 const& origin() { return m_origin; }
-    std::vector<Mesh> const& meshes() { return m_meshes; }
+    glm::vec3 const& origin() const { return m_origin; }
+    std::vector<Mesh> const& meshes() const { return m_meshes; }
 };
 
 }

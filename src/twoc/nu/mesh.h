@@ -3,7 +3,7 @@
 #include <cstdint>
 #include "../reader_item.h"
 #include "vertex.h"
-#include "mesh_primitive.h"
+#include "primitive.h"
 
 namespace Twoc::Nu {
 
@@ -25,7 +25,7 @@ public:
     size_t size() override { return 0; }
 
     uint32_t material() const { return m_material; }
-    std::vector<Nu::Vertex> const& vertices() { return m_vertices; }
-    std::vector<Nu::Primitive> const& primitives() { return m_primitives; }
+    std::vector<Nu::Vertex> const& vertices() const { return m_vertices; }
+    std::vector<Nu::Primitive> const& primitives() const { return m_primitives; }
 };
 }

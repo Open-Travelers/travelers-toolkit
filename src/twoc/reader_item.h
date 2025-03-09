@@ -28,7 +28,7 @@ protected:\
 public:\
     name() = default; \
     ~name() override; \
-    name##Data const& data() { return m_data; } \
+    name##Data const& data() const { return m_data; } \
     static name *from_reader(Twoc::BinaryReader &reader, size_t fullsize = 0); \
     size_t size() override; \
     bool validate() override; \

@@ -27,7 +27,7 @@ protected:
 
 public:
     View(ApplicationData &app) : m_app(app) {}
-    virtual ~View() {};
+    virtual ~View() {}
 
 protected:
     virtual void on_load(int display_width, int display_height) = 0;

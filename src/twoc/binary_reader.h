@@ -54,7 +54,7 @@ public:
     std::vector<T> array(size_t count)
     {
         std::vector<T> result;
-        result.reserve(count);
+        result.resize(count);
         for (size_t i = 0; i < count; i++)
             result[i] = read<T>();
         return result;
