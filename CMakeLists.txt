@@ -140,7 +140,9 @@ add_executable(ttoolkit ${SOURCES}
     src/scene_renderer.h
     src/scene_renderer.cpp
     src/camera.h
-    src/camera.cpp)
+    src/camera.cpp
+    src/gl.h
+    src/gl.cpp)
 target_include_directories(ttoolkit PUBLIC src/ ${EXT_INCLUDES})
 target_link_libraries(ttoolkit PRIVATE ${LIBRARIES})
 

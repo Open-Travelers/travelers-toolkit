@@ -16,7 +16,12 @@ protected:
     Camera m_camera;
     glm::mat4 m_projection_matrix;
 
+    std::vector<std::string> m_texture_names;
+    int m_texture_selected { -1 };
+
+    std::string const& texture_name(int index) const { return m_texture_names[index]; }
     bool load_scenes();
+    bool load_scene(Twoc::Nu::Scene *scene);
 
     void on_load(int display_width, int display_height) override;
     UI::ViewChange on_unload() override;

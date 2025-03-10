@@ -1,6 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include "gl.h"
 #include "shader.h"
 
 Shader::Shader()
@@ -21,9 +22,10 @@ void Shader::unload()
 
 void Shader::bind()
 {
-    if (m_shader_program != 0)
+    if (m_shader_program == 0)
         return;
     glUseProgram(m_shader_program);
+    Gl::check_errors("glUseProgram");
 }
 
 static std::string collect_shader(std::ifstream &file, bool &error) {
@@ -97,17 +99,22 @@ bool Shader::load(std::string const& vertex_shader_path, std::string const& frag
     // create vertex shader
     const char *vtx_raw = vtx_source.c_str();
     GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+    Gl::check_errors("glCreateShader");
     glShaderSource(vertex_shader, 1, &vtx_raw, nullptr);
+    Gl::check_errors("glShaderSource");
     glCompileShader(vertex_shader);
+    Gl::check_errors("glCompileShader");
 
     // check for compilation errors
     int success = 0;
     char log[512] = {0};
 
     glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &success);
+    Gl::check_errors("glGetShaderiv");
     if (!success)
     {
         glGetShaderInfoLog(vertex_shader, 512, nullptr, log);
+        Gl::check_errors("glGetShaderInfoLog");
         std::cerr << "Failed to compile vertex shader: " << std::string(log) << std::endl;
         return false;
     }
@@ -116,43 +123,60 @@ bool Shader::load(std::string const& vertex_shader_path, std::string const& frag
     // create fragment shader
     const char* frag_raw = frag_source.c_str();
     GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+    Gl::check_errors("glCreateShader[fragment]");
     glShaderSource(fragment_shader, 1, &frag_raw, NULL);
+    Gl::check_errors("glShaderSource[fragment]");
     glCompileShader(fragment_shader);
+    Gl::check_errors("glCompileShader[fragment]");
 
     // check for compilation errors
     glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &success);
+    Gl::check_errors("glGetShaderiv[fragment]");
     if (!success)
     {
         glGetShaderInfoLog(fragment_shader, 512, NULL, log);
+        Gl::check_errors("glGetShaderInfoLog[fragment]");
         std::cerr << "Failed to compile fragment shader: " << std::string(log) << std::endl;
 
         glDeleteShader(vertex_shader);
+        Gl::check_errors("glDeleteShader[vertex]");
         return false;
     }
 
     // create shader program
     GLuint shader_program = glCreateProgram();
+    Gl::check_errors("glCreateProgram");
     glAttachShader(shader_program, vertex_shader);
+    Gl::check_errors("glAttachShader[vertex]");
     glAttachShader(shader_program, fragment_shader);
+    Gl::check_errors("glAttachShader[fragment]");
     glLinkProgram(shader_program);
+    Gl::check_errors("glLinkProgram");
 
     // check for linking errors
     success = 0;
     glGetProgramiv(shader_program, GL_LINK_STATUS, &success);
+    Gl::check_errors("glGetProgramiv");
     if (!success)
     {
         glGetProgramInfoLog(shader_program, 512, NULL, log);
+        Gl::check_errors("glGetProgramInfoLog");
         std::cerr << "Failed to link shader program: " << std::string(log) << std::endl;
 
         glDeleteShader(fragment_shader);
+        Gl::check_errors("glDeleteShader[fragment]");
         glDeleteShader(vertex_shader);
+        Gl::check_errors("glDeleteShader[vertex]");
         glDeleteProgram(shader_program);
+        Gl::check_errors("glDeleteProgram");
         return false;
     }
 
     // delete shaders and return success
     glDeleteShader(fragment_shader);
+    Gl::check_errors("glDeleteShader[fragment]_success");
     glDeleteShader(vertex_shader);
+    Gl::check_errors("glDeleteShader[vertex]_success");
     m_shader_program = shader_program;
     return true;
 }
@@ -164,5 +188,7 @@ GLuint Shader::get_shader_program()
 
 GLuint Shader::get_uniform_location(const char *name)
 {
-    return glGetUniformLocation(m_shader_program, name);
+    GLuint result = glGetUniformLocation(m_shader_program, name);
+    Gl::check_errors("glGetUniformLocation");
+    return result;
 }

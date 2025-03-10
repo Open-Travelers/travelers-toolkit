@@ -99,16 +99,42 @@ void WelcomeView::on_resize(int width, int height)
     glViewport(0, 0, width, height);
 }
 
-static std::vector<std::string> texture_names;
+bool WelcomeView::load_scene(Twoc::Nu::Scene *scene)
+{
+    if (scene == nullptr)
+    {
+        (void) pfd::message("Error", "Could not load scene!", pfd::choice::ok, pfd::icon::error);
+    } else {
+        if (!m_renderer.load(scene))
+        {
+            (void) pfd::message("Error", "Could not load scene into renderer!", pfd::choice::ok, pfd::icon::error);
+            return false;
+        } else {
+            if (m_scene != nullptr)
+                delete m_scene;
+            m_scene = scene;
+
+            m_texture_names.clear();
+            for (size_t i = 0; i < m_scene->texture_count(); i++)
+            {
+                auto const& tex = m_scene->texture(i);
+                std::stringstream str;
+                str << "Texture " << i << ": " << tex.max_width() << "x" << tex.max_height() << " #" << tex.type();
+                m_texture_names.push_back(str.str());
+            }
+            m_texture_selected = -1;
+        }
+    }
+    return true;
+}
 void WelcomeView::on_render()
 {
-    static int texture_selected = -1;
-
+    static bool in_custom_level_window = false;
     glClearColor(0.1f, 0.1f, 0.1f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    //if (m_scene)
-    //    m_renderer.render(m_camera.view_matrix(), m_projection_matrix);
+    if (m_scene)
+        m_renderer.render(m_camera.view_matrix(), m_projection_matrix);
 
     if (ImGui::BeginMainMenuBar())
     {
@@ -118,15 +144,26 @@ void WelcomeView::on_render()
                 std::string twoc_root = pfd::select_folder("Select extracted game root...").result();
                 if (twoc_root.empty())
                 {
-                    (void) pfd::message("Fatal", "Can't select empty folder!", pfd::choice::ok, pfd::icon::error);
+                    (void) pfd::message("Error", "Can't select empty folder!", pfd::choice::ok, pfd::icon::error);
                 } else {
                     if (!m_app.Project.load(twoc_root))
                     {
-                        (void) pfd::message("Fatal", "Couldn't load game root!", pfd::choice::ok, pfd::icon::error);
-                        exit(1);
+                        (void) pfd::message("Error", "Couldn't load game root!", pfd::choice::ok, pfd::icon::error);
+                    } else {
+                        load_scenes();
                     }
-                    load_scenes();
                 }
+            }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Level"))
+        {
+            if (ImGui::MenuItem("Custom Level Selector"))
+            {
+                if (m_app.Project.executable() != nullptr)
+                    in_custom_level_window = true;
+                else
+                    (void) pfd::message("Error", "Need to load root first!", pfd::choice::ok, pfd::icon::error);
             }
             ImGui::EndMenu();
         }
@@ -135,6 +172,46 @@ void WelcomeView::on_render()
 
     if (m_app.Project.executable() == nullptr)
         return;
+
+    if (in_custom_level_window)
+    {
+        static std::string scene_path;
+        if (ImGui::Begin("Select Individual Level Files"))
+        {
+            ImGui::Text("%s", scene_path.c_str());
+            ImGui::SameLine();
+            if (ImGui::Button("..."))
+            {
+                const std::vector<std::string> scene_filter = {
+                    "Nu Scene", "*.nus|*.NUS",
+                    "All Files", "*"
+                };
+
+                auto result = pfd::open_file("Select Scene", scene_path, scene_filter).result();
+                if (!result.empty())
+                {
+                    scene_path = result[0];
+                }
+            }
+            if (ImGui::Button("Load"))
+            {
+                if (!scene_path.empty())
+                {
+                    FileBinaryReader scene_reader(m_app.Project.endianness());
+                    if (!scene_reader.open(scene_path))
+                    {
+                        (void) pfd::message("Error", "Failed to openfile '" + scene_path + "'!", pfd::choice::ok, pfd::icon::error);
+                    } else {
+                        Twoc::Nu::Scene *scene = Twoc::Nu::Scene::from_reader(scene_reader);
+                        load_scene(scene);
+                    }
+                }
+                in_custom_level_window = false;
+            }
+
+        }
+        ImGui::End();
+    }
 
     if (ImGui::Begin("Levels"))
     {
@@ -169,29 +246,7 @@ void WelcomeView::on_render()
                                 std::cerr << "Path '" << scene_path << "' doesn't exist!" << std::endl;
                             } else {
                                 Twoc::Nu::Scene *scene = Twoc::Nu::Scene::from_reader(scene_reader);
-                                if (scene == nullptr)
-                                {
-                                    (void) pfd::message("Error", "Could not load scene!", pfd::choice::ok, pfd::icon::error);
-                                } else {
-                                    if (!m_renderer.load(scene))
-                                    {
-                                        (void) pfd::message("Error", "Could not load scene into renderer!", pfd::choice::ok, pfd::icon::error);
-                                    } else {
-                                        if (m_scene != nullptr)
-                                            delete m_scene;
-                                        m_scene = scene;
-
-                                        texture_names.clear();
-                                        for (size_t i = 0; i < m_scene->texture_count(); i++)
-                                        {
-                                            auto const& tex = m_scene->texture(i);
-                                            std::stringstream str;
-                                            str << "Texture " << i << ": " << tex.max_width() << "x" << tex.max_height() << " #" << tex.type();
-                                            texture_names.push_back(str.str());
-                                        }
-                                        texture_selected = -1;
-                                    }
-                                }
+                                load_scene(scene);
                             }
                         }
                     }
@@ -396,14 +451,16 @@ void WelcomeView::on_render()
             {
                 ImGui::Text("No scene loaded");
             } else {
-                ImGui::ListBox("##LstTextures", &texture_selected, [](void *user_data, int which) -> const char* {
-                    return texture_names[which].c_str();
-                }, nullptr, m_scene->texture_count());
+                std::vector<std::string> texture_names = m_texture_names;
+                ImGui::ListBox("##LstTextures", &m_texture_selected, [](void *user_data, int which) -> const char* {
+                    WelcomeView* ptr = (WelcomeView*) user_data;
+                    return ptr->texture_name(which).c_str();
+                }, this, m_scene->texture_count());
 
-                if (texture_selected >= 0)
+                if (m_texture_selected >= 0)
                 {
                     ImGui::BeginChild("ImgTexture");
-                    ImGui::Image((ImTextureID)m_renderer.get_texture(texture_selected), ImVec2(128, 128));
+                    ImGui::Image((ImTextureID)m_renderer.get_texture(m_texture_selected), ImVec2(128, 128));
                     ImGui::EndChild();
                 }
             }
