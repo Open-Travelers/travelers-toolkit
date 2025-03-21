@@ -1,13 +1,15 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
-#include "ui/manager.h"
-#include "application_data.h"
+#include "../ui/manager.h"
+#include "data.h"
+
+namespace App {
 
 class Application {
 protected:
     UI::Manager m_ui {};
-    ApplicationData m_data {};
+    Data m_data {};
 public:
     int run(int argc, char *argv[]);
 
@@ -16,3 +18,5 @@ public:
     ~Application();
 
 };
+
+}

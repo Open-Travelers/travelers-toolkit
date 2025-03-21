@@ -3,8 +3,11 @@
 #include <string>
 #include <set>
 #include <filesystem>
-#include "twoc/executable.h"
-#include "file_binary_reader.h"
+#include "../twoc/executable.h"
+#include "../file_binary_reader.h"
+#include "../directory.h"
+
+namespace App {
 
 enum class ProjectBaseConsole {
     NONE = -1,
@@ -13,25 +16,27 @@ enum class ProjectBaseConsole {
     XBOX
 };
 
-class ApplicationProject {
+class Project {
 protected:
     ProjectBaseConsole m_console { ProjectBaseConsole::NONE };
     Twoc::Executable *m_executable { nullptr };
     Twoc::ReaderEndianness m_endianness;
     std::set<int> m_level_existance;
-    std::filesystem::path m_root_path;
+    std::shared_ptr<Directory> m_root_directory;
 
 public:
-    ApplicationProject() = default;
-    ~ApplicationProject();
+    Project() = default;
+    ~Project();
 
     bool load(std::string const& directory);
     void unload();
 
-    bool find_file(std::filesystem::path const& path, FileBinaryReader &reader);
+    std::unique_ptr<Twoc::BinaryReader> find_file(std::filesystem::path const& path);
 
     bool does_level_exist(int index);
     Twoc::Executable const* executable() const { return m_executable; }
     Twoc::ReaderEndianness endianness() const { return m_endianness; }
-    std::filesystem::path const& root_path() const { return m_root_path; }
+    std::filesystem::path root_path() const { return m_root_directory->full_path(); }
 };
+
+}

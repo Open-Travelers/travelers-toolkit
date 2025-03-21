@@ -17,7 +17,7 @@
 
 #include "welcome_view.h"
 
-WelcomeView::WelcomeView(ApplicationData &app) : UI::View(app),
+WelcomeView::WelcomeView(App::Data &app, std::function<bool(UI::Key)> key_held_fn) : UI::View(app, key_held_fn),
     m_camera(glm::vec3 { 0, 0, 0 }, glm::vec3 { 0, 0, 5 }), m_projection_matrix(glm::perspectiveFov(glm::radians<float>(90.f), 1280.f, 768.f, 0.01f, 100.f))
 {
 
@@ -38,10 +38,10 @@ bool WelcomeView::load_scenes()
         delete m_wumpa_scene;
     m_wumpa_scene = nullptr;
 
-    FileBinaryReader crate_reader(m_app.Project.endianness());
-    if (m_app.Project.find_file("stuff\\crates.nus", crate_reader))
+    std::unique_ptr<Twoc::BinaryReader> crate_reader = m_app.Project.find_file("stuff/crates.nus");
+    if (crate_reader)
     {
-        m_crate_scene = Twoc::Nu::Scene::from_reader(crate_reader);
+        m_crate_scene = Twoc::Nu::Scene::from_reader(*crate_reader);
         if (!m_crate_scene)
         {
             std::cerr << "Could not read crate file!" << std::endl;
@@ -52,10 +52,10 @@ bool WelcomeView::load_scenes()
         return false;
     }
 
-    FileBinaryReader wumpa_reader(m_app.Project.endianness());
-    if (m_app.Project.find_file("stuff\\wumpa.nus", wumpa_reader))
+    std::unique_ptr<Twoc::BinaryReader> wumpa_reader = m_app.Project.find_file("stuff/wumpa.nus");
+    if (wumpa_reader)
     {
-        m_wumpa_scene = Twoc::Nu::Scene::from_reader(wumpa_reader);
+        m_wumpa_scene = Twoc::Nu::Scene::from_reader(*wumpa_reader);
         if (!m_wumpa_scene)
         {
             std::cerr << "Could not read wumpa file!" << std::endl;
@@ -81,6 +81,9 @@ void WelcomeView::on_load(int width, int height)
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
     glCullFace(GL_BACK);
+
+    m_camera.set_position({4, 0, 0});
+    m_camera.set_target({0, 0, 0});
 }
 
 UI::ViewChange WelcomeView::on_unload()
@@ -90,6 +93,18 @@ UI::ViewChange WelcomeView::on_unload()
 
 void WelcomeView::on_update(float dt)
 {
+    glm::vec2 axis = { 0, 0 };
+    if (key_held(UI::Key::A))
+        axis.x -= 1;
+    if (key_held(UI::Key::D))
+        axis.x += 1;
+    if (key_held(UI::Key::S))
+        axis.y += 1;
+    if (key_held(UI::Key::W))
+        axis.y -= 1;
+
+    m_camera.set_position(m_camera.position() + glm::vec3 { axis.x, 0, axis.y });
+    m_camera.set_target(m_camera.target() + glm::vec3 { axis.x, 0, axis.y });
 
 }
 
@@ -127,6 +142,7 @@ bool WelcomeView::load_scene(Twoc::Nu::Scene *scene)
     }
     return true;
 }
+
 void WelcomeView::on_render()
 {
     static bool in_custom_level_window = false;
@@ -240,12 +256,12 @@ void WelcomeView::on_render()
                             std::filesystem::path scene_path = level_path;
                             scene_path += ".nus";
 
-                            FileBinaryReader scene_reader(m_app.Project.endianness());
-                            if (!m_app.Project.find_file(scene_path, scene_reader))
+                            std::unique_ptr<Twoc::BinaryReader> scene_reader = m_app.Project.find_file(scene_path);
+                            if (!scene_reader)
                             {
                                 std::cerr << "Path '" << scene_path << "' doesn't exist!" << std::endl;
                             } else {
-                                Twoc::Nu::Scene *scene = Twoc::Nu::Scene::from_reader(scene_reader);
+                                Twoc::Nu::Scene *scene = Twoc::Nu::Scene::from_reader(*scene_reader);
                                 load_scene(scene);
                             }
                         }

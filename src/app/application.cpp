@@ -12,19 +12,26 @@ extern "C" {
 #include <algorithm>
 #include <cctype>
 
-#include "file_binary_reader.h"
-#include "twoc/executable.h"
-#include "imgui-SFML.h"
-#include "imgui_impl_opengl3.h"
+#include "../file_binary_reader.h"
+#include "../twoc/executable.h"
+#include "../imgui-SFML.h"
+#include "../imgui_impl_opengl3.h"
 
-#include "views/welcome/welcome_view.h"
+#include "../views/welcome/welcome_view.h"
 #include "application.h"
 
+namespace App {
+
 static constexpr int WINDOW_WIDTH = 1280;
-static constexpr int WINDOW_HEIGHT = 768; 
+static constexpr int WINDOW_HEIGHT = 768;
+
+bool key_held_fn(UI::Key key)
+{
+    return sf::Keyboard::isKeyPressed((sf::Keyboard::Key) key);
+}
 Application::Application() 
 {
-    m_ui.add_view(std::make_shared<WelcomeView>(m_data));
+    m_ui.add_view(std::make_shared<WelcomeView>(m_data, key_held_fn));
 }
 
 Application::~Application() {
@@ -144,4 +151,6 @@ exited:
     ImGui_ImplOpenGL3_Shutdown();
     ImGui::SFML::Shutdown();
     return 0;
+}
+
 }

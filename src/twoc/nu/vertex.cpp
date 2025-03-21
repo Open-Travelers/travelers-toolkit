@@ -19,4 +19,13 @@ Vertex::Vertex(VertexType0 raw) :
 
 }
 
+Vertex::Vertex(glm::vec3 position, glm::vec3 normal, Color color, glm::vec2 uv) :
+    m_position(position),
+    m_normal(normal),
+    m_color(color),
+    m_uv(uv)
+{
+
+}
+
 }

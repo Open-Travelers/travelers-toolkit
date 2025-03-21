@@ -57,8 +57,8 @@ set(SOURCES
         ${SOURCES}
         src/main.cpp
         src/platform.h
-        src/application.h
-        src/application.cpp
+        src/app/application.h
+        src/app/application.cpp
         src/imgui_impl_opengl3.cpp
 
         src/shader.h
@@ -111,9 +111,9 @@ set(SOURCES
         src/ui/view.h 
         src/ui/view.cpp 
 
-        src/application_project.h
-        src/application_project.cpp
-        src/application_data.h
+        src/app/project.h
+        src/app/project.cpp
+        src/app/data.h
 
         src/views/welcome/welcome_view.h
         src/views/welcome/welcome_view.cpp 
@@ -142,7 +142,11 @@ add_executable(ttoolkit ${SOURCES}
     src/camera.h
     src/camera.cpp
     src/gl.h
-    src/gl.cpp)
+    src/gl.cpp
+    src/directory.h
+    src/case_insensitive_directory.h
+    src/case_insensitive_directory.cpp
+    src/directory.cpp)
 target_include_directories(ttoolkit PUBLIC src/ ${EXT_INCLUDES})
 target_link_libraries(ttoolkit PRIVATE ${LIBRARIES})
 

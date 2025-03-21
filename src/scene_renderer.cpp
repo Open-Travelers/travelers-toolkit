@@ -70,6 +70,7 @@ bool SceneRenderer::load(Twoc::Nu::Scene const* scene)
         for (auto &mesh : obj.meshes())
             vertex_count += mesh.vertices().size();
 
+        std::cout << "Vertex count: " << vertex_count << std::endl;
         glGenBuffers(1, &vbo);
         Gl::check_errors("glGenBuffers");
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -131,7 +132,6 @@ bool SceneRenderer::load(Twoc::Nu::Scene const* scene)
     m_scene = scene;
     return true;
 }
-
 
 void SceneRenderer::render(glm::mat4 const& view, glm::mat4 const& projection)
 {
@@ -197,6 +197,7 @@ void SceneRenderer::render(glm::mat4 const& view, glm::mat4 const& projection)
                 auto const& indices = prim.indices();
                 for (auto const& face : faces)
                 {
+                    //std::cout << std::endl;
                     glDrawElementsBaseVertex(mode, face.Count, GL_UNSIGNED_SHORT, indices.data() + face.Index, render_object.VertexOffsets[mesh_i]);
                     Gl::check_errors("glDrawElementsBaseVertex");
                 }

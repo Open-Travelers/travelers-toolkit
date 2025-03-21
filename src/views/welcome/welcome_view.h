@@ -1,8 +1,9 @@
 #pragma once
 
+#include <functional>
 #include "../../ui/view.h"
-#include "../../application_project.h"
-#include "../../application_data.h"
+#include "../../app/project.h"
+#include "../../app/data.h"
 #include "twoc/nu/scene.h"
 #include "scene_renderer.h"
 #include "camera.h"
@@ -31,7 +32,7 @@ protected:
     void on_render() override;
 
 public:
-    WelcomeView(ApplicationData &app);
+    WelcomeView(App::Data &app, std::function<bool(UI::Key)> key_held_fn);
     ~WelcomeView() override;
 
 };

@@ -1,25 +1,29 @@
 #include <stdexcept>
 #include <filesystem>
 #include <portable-file-dialogs.h>
-#include "file_binary_reader.h"
-#include "application_project.h"
+#include "../file_binary_reader.h"
+#include "project.h"
+#include "case_insensitive_directory.h"
 
-ApplicationProject::~ApplicationProject()
+namespace App {
+
+Project::~Project()
 {
 
 }
 
-bool ApplicationProject::load(const std::string &directory)
+bool Project::load(const std::string &directory)
 {
     unload();
 
-    std::filesystem::path root_path(directory);
-    if (std::filesystem::exists(root_path / "default.xbe"))
+    std::shared_ptr<Directory> root_dir = std::make_shared<CaseInsensitiveDirectory>(directory);
+    if (root_dir->file_exists("default.xbe"))
     {
         (void) pfd::message("Fatal", "Xbox version not yet supported!", pfd::choice::ok, pfd::icon::error);
         return false;
-    } else if (std::filesystem::exists(root_path / "crashwoc.elf"))
+    } else if (root_dir->file_exists("crashwoc.elf"))
     {
+#if 0
         FileBinaryReader executable_file(Twoc::ReaderEndianness::Big);
         if (!executable_file.open(root_path / "crashwoc.elf"))
         {
@@ -36,9 +40,12 @@ bool ApplicationProject::load(const std::string &directory)
 
         m_executable = exe;
         m_endianness = Twoc::ReaderEndianness::Big;
-    } else if (std::filesystem::exists(root_path / "system.cnf"))
+#endif
+    } else if (root_dir->file_exists("system.cnf"))
     {
-        std::ifstream cnf(root_path / "system.cnf");
+        std::filesystem::path cnf_path = root_dir->file_find("system.cnf");
+
+        std::ifstream cnf(cnf_path);
         if (!cnf.is_open())
         {
             (void) pfd::message("Fatal", "SYSTEM.CNF file exists, but couldn't be opened!", pfd::choice::ok, pfd::icon::error);
@@ -58,25 +65,14 @@ bool ApplicationProject::load(const std::string &directory)
             }
         }
 
-        FileBinaryReader executable(Twoc::ReaderEndianness::Little);
-
-        bool done = false;
-        if (executable.open(root_path / executable_filename))
-            done = true;
-
-        std::transform(executable_filename.begin(), executable_filename.end(), executable_filename.begin(),
-                       [](unsigned char c){ return std::tolower(c); });
-
-        if(!done && executable.open(root_path / executable_filename))
-            done = true;
-
-        if (!done)
+        std::unique_ptr<Twoc::BinaryReader> reader = root_dir->file_open(executable_filename, Twoc::ReaderEndianness::Little);
+        if (!reader)
         {
-            (void) pfd::message("Fatal", "PS2 executable exists but could not be opened!", pfd::choice::ok, pfd::icon::error);
+            (void) pfd::message("Fatal", "PS2 executable doesn't exist or couldn't be found!", pfd::choice::ok, pfd::icon::error);
             return false;
         }
 
-        Twoc::ElfExecutable *exe = Twoc::ElfExecutable::from_reader(executable);
+        Twoc::ElfExecutable *exe = Twoc::ElfExecutable::from_reader(*reader);
         if (!exe)
         {
             (void) pfd::message("Fatal", "PS2 executable couldn't be parsed!", pfd::choice::ok, pfd::icon::error);
@@ -85,45 +81,36 @@ bool ApplicationProject::load(const std::string &directory)
 
         m_executable = exe;
         m_endianness = Twoc::ReaderEndianness::Little;
+    } else {
+        return false;
     }
 
+
+    std::filesystem::path level_path = "levels/";
     int i = 0;
     for (auto const& level : m_executable->level_data())
     {
-        auto level_path = root_path / "levels";
         auto corrected_path = std::regex_replace(level.Filepath, std::regex("\\\\"), "/");
-        auto path_object = std::filesystem::path(corrected_path).make_preferred();
-        auto directory = level_path / path_object.remove_filename();
-        if (std::filesystem::exists(directory))
+        auto path_object = (level_path / std::filesystem::path(corrected_path)).make_preferred();
+
+        auto directory = path_object.remove_filename();
+        if (root_dir->file_exists(directory))
             m_level_existance.insert(i);
         i++;
     }
 
-    m_root_path = directory;
+    m_root_directory = root_dir;
     return true;
 }
 
-bool ApplicationProject::find_file(std::filesystem::path const& path, FileBinaryReader &reader)
+std::unique_ptr<Twoc::BinaryReader> Project::find_file(std::filesystem::path const& path)
 {
     std::filesystem::path fixed_path(std::regex_replace(path.string(), std::regex("\\\\"), "/"));
     fixed_path = fixed_path.make_preferred();
-
-    std::string file_name = fixed_path.filename().string();
-    fixed_path = fixed_path.remove_filename();
-
-    std::filesystem::path full_path = m_root_path / fixed_path;
-
-    std::transform(file_name.begin(), file_name.end(), file_name.begin(), ::tolower);
-    if (!reader.open(full_path / file_name))
-    {
-        std::transform(file_name.begin(), file_name.end(), file_name.begin(), ::toupper);
-        reader.open(full_path / file_name);
-    }
-
-    return reader.status() != Twoc::ReaderStatus::Error;
+    return m_root_directory->file_open(fixed_path, m_endianness);
 }
 
-void ApplicationProject::unload()
+void Project::unload()
 {
     m_level_existance.clear();
 
@@ -132,7 +119,9 @@ void ApplicationProject::unload()
     m_endianness = Twoc::ReaderEndianness::Little;
 }
 
-bool ApplicationProject::does_level_exist(int index)
+bool Project::does_level_exist(int index)
 {
     return m_level_existance.contains(index);
+}
+
 }

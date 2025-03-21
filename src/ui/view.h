@@ -5,7 +5,7 @@
 #include <memory>
 #include "types.h"
 #include "window.h"
-#include "../application_data.h"
+#include "../app/data.h"
 
 namespace UI {
 
@@ -17,16 +17,18 @@ enum class ViewChange {
 
 class View {
 protected:
-    friend ApplicationData;
+    friend App::Data;
 
 protected:
     std::function<void(size_t)> change_view;
+    std::function<bool(Key)> key_held;
+
     std::vector<std::shared_ptr<Window>> m_windows;
     int m_display_width, m_display_height;
-    ApplicationData &m_app;
+    App::Data &m_app;
 
 public:
-    View(ApplicationData &app) : m_app(app) {}
+    View(App::Data &app, std::function<bool(Key)> key_held_fn) : m_app(app), key_held(key_held_fn) {}
     virtual ~View() {}
 
 protected:

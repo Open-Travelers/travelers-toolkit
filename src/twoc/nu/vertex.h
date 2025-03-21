@@ -33,6 +33,7 @@ protected:
 
 public:
     Vertex(VertexType0 raw);
+    Vertex(glm::vec3 position, glm::vec3 normal, Color color, glm::vec2 uv);
 
     glm::vec3 const& position() { return m_position; }
     glm::vec3 const& normal() { return m_normal; }

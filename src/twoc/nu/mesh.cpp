@@ -14,6 +14,8 @@ bool Mesh::read_vertices(Twoc::BinaryReader &reader)
 
         vertices.push_back(Vertex(raw));
     }
+
+    m_vertices = vertices;
     return true;
 }
 
