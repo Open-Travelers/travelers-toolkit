@@ -4,7 +4,7 @@
 	branch = docking
 [submodule "ext/portable-file-dialogs"]
 	path = ext/portable-file-dialogs
-	url = https://github.com/samhocevar/portable-file-dialogs
+	url = https://github.com/RatcheT2497/portable-file-dialogs
 [submodule "ext/glm"]
 	path = ext/glm
 	url = https://github.com/g-truc/glm
