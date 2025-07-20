@@ -117,36 +117,36 @@ set(SOURCES
 
         src/views/welcome/welcome_view.h
         src/views/welcome/welcome_view.cpp 
+        src/twoc/character_data.h
+        src/twoc/character_data.cpp
+        src/memory_binary_reader.h
+        src/memory_binary_reader.cpp
+        src/twoc/dat/file.h
+        src/twoc/nu/special_object.h
+        src/twoc/nu/spline.h
+        src/twoc/nu/spline.cpp
+        src/twoc/nu/primitive.h
+        src/twoc/nu/primitive.cpp
+        src/twoc/nu/mesh.h
+        src/twoc/nu/mesh.cpp
+        src/twoc/nu/geometry_object.h
+        src/twoc/nu/geometry_object.cpp
+        src/twoc/dat/file.cpp
+        src/twoc/dat/file_header.h
+        src/twoc/dat/file_header.cpp
+        src/scene_renderer.h
+        src/scene_renderer.cpp
+        src/camera.h
+        src/camera.cpp
+        src/gl.h
+        src/gl.cpp
+        src/directory.h
+        src/case_insensitive_directory.h
+        src/case_insensitive_directory.cpp
+        src/directory.cpp
 )
 
-add_executable(ttoolkit ${SOURCES}
-    src/twoc/character_data.h
-    src/twoc/character_data.cpp
-    src/memory_binary_reader.h
-    src/memory_binary_reader.cpp
-    src/twoc/dat/file.h
-    src/twoc/nu/special_object.h
-    src/twoc/nu/spline.h
-    src/twoc/nu/spline.cpp
-    src/twoc/nu/primitive.h
-    src/twoc/nu/primitive.cpp
-    src/twoc/nu/mesh.h
-    src/twoc/nu/mesh.cpp
-    src/twoc/nu/geometry_object.h
-    src/twoc/nu/geometry_object.cpp
-    src/twoc/dat/file.cpp
-    src/twoc/dat/file_header.h
-    src/twoc/dat/file_header.cpp
-    src/scene_renderer.h
-    src/scene_renderer.cpp
-    src/camera.h
-    src/camera.cpp
-    src/gl.h
-    src/gl.cpp
-    src/directory.h
-    src/case_insensitive_directory.h
-    src/case_insensitive_directory.cpp
-    src/directory.cpp)
+add_executable(ttoolkit ${SOURCES})
 target_include_directories(ttoolkit PUBLIC src/ ${EXT_INCLUDES})
 target_link_libraries(ttoolkit PRIVATE ${LIBRARIES})
 
@@ -163,4 +163,10 @@ if(WIN32)
             COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:ttoolkit> $<TARGET_RUNTIME_DLLS:ttoolkit>
             COMMAND_EXPAND_LISTS    )
 endif()
+add_custom_command(
+        TARGET ttoolkit
+        PRE_BUILD 
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/data ${CMAKE_BINARY_DIR}
+        VERBATIM
+)
 install(TARGETS ttoolkit)
