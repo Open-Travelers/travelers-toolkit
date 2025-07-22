@@ -17,6 +17,12 @@ protected:
     Camera m_camera;
     glm::mat4 m_projection_matrix;
 
+    bool m_rotating_camera { false };
+    int m_last_mouse_x { 0 };
+    int m_last_mouse_y { 0 };
+    int m_mouse_dx { 0 };
+    int m_mouse_dy { 0 };
+
     std::vector<std::string> m_texture_names;
     int m_texture_selected { -1 };
 
@@ -30,6 +36,11 @@ protected:
     void on_resize(int width, int height) override;
     void on_update(float dt) override;
     void on_render() override;
+
+    void on_mouse_press(UI::MouseButton button, int x, int y) override;
+    void on_mouse_release(UI::MouseButton button, int x, int y) override;
+    void on_mouse_moved(int x, int y) override;
+
 
 public:
     WelcomeView(App::Data &app, std::function<bool(UI::Key)> key_held_fn);

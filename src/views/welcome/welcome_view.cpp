@@ -79,7 +79,7 @@ void WelcomeView::on_load(int width, int height)
     glDepthFunc(GL_LEQUAL);
 
     glEnable(GL_CULL_FACE);
-    glFrontFace(GL_CCW);
+    glFrontFace(GL_CW);
     glCullFace(GL_BACK);
 
     m_camera.set_position({4, 0, 0});
@@ -91,21 +91,53 @@ UI::ViewChange WelcomeView::on_unload()
     return UI::ViewChange::CHANGE;
 }
 
+void WelcomeView::on_mouse_press(UI::MouseButton button, int x, int y)
+{
+    if (button == UI::MouseButton::RIGHT)
+        m_rotating_camera = true;
+}
+
+void WelcomeView::on_mouse_release(UI::MouseButton button, int x, int y)
+{
+    if (button == UI::MouseButton::RIGHT)
+        m_rotating_camera = false;
+}
+
+void WelcomeView::on_mouse_moved(int x, int y)
+{
+    int dx = x - m_last_mouse_x;
+    int dy = y - m_last_mouse_y;
+    m_mouse_dx = dx;
+    m_mouse_dy = dy;
+    m_last_mouse_x = x;
+    m_last_mouse_y = y;
+}
+
 void WelcomeView::on_update(float dt)
 {
-    glm::vec2 axis = { 0, 0 };
-    if (key_held(UI::Key::A))
-        axis.x -= 1;
-    if (key_held(UI::Key::D))
-        axis.x += 1;
-    if (key_held(UI::Key::S))
-        axis.y += 1;
-    if (key_held(UI::Key::W))
-        axis.y -= 1;
+    if (m_rotating_camera)
+    {
+        glm::vec3 direction { 0 };
+        if (key_held(UI::Key::W))
+            direction -= m_camera.front();
+        if (key_held(UI::Key::S))
+            direction += m_camera.front();
+        if (key_held(UI::Key::A))
+            direction -= m_camera.right();
+        if (key_held(UI::Key::D))
+            direction += m_camera.right();
 
-    m_camera.set_position(m_camera.position() + glm::vec3 { axis.x, 0, axis.y });
-    m_camera.set_target(m_camera.target() + glm::vec3 { axis.x, 0, axis.y });
+        if (glm::length(direction) != 0.f)
+            direction = glm::normalize(direction);
+        m_camera.move(direction * 20.f * dt);
 
+        m_camera.add_yaw(m_mouse_dx * dt);
+        m_camera.add_pitch(-m_mouse_dy * dt);
+        m_camera.set_target_from_angles();
+
+        m_mouse_dx = 0;
+        m_mouse_dy = 0;
+    }
 }
 
 void WelcomeView::on_resize(int width, int height)
@@ -147,7 +179,7 @@ void WelcomeView::on_render()
 {
     static bool in_custom_level_window = false;
     glClearColor(0.1f, 0.1f, 0.1f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
     if (m_scene)
         m_renderer.render(m_camera.view_matrix(), m_projection_matrix);
@@ -216,7 +248,7 @@ void WelcomeView::on_render()
                     FileBinaryReader scene_reader(m_app.Project.endianness());
                     if (!scene_reader.open(scene_path))
                     {
-                        (void) pfd::message("Error", "Failed to openfile '" + scene_path + "'!", pfd::choice::ok, pfd::icon::error);
+                        (void) pfd::message("Error", "Failed to open file '" + scene_path + "'!", pfd::choice::ok, pfd::icon::error);
                     } else {
                         Twoc::Nu::Scene *scene = Twoc::Nu::Scene::from_reader(scene_reader);
                         load_scene(scene);
@@ -458,6 +490,63 @@ void WelcomeView::on_render()
                 }
                 ImGui::TreePop();
             }
+            if (ImGui::TreeNodeEx("Materials"))
+            {
+                int i = 0;
+                for (auto const& material : m_scene->materials())
+                {
+                    /*
+                        i(uint32_t, p_next) \
+                        i(uint32_t, flags) \
+                        a(float, ambient, 3) \
+                        a(float, diffuse, 3) \
+                        a(uint32_t, fx_params, 4) \
+                        i(float, power) \
+                        i(float, alpha) \
+                        i(uint32_t, texture_id) \
+                        i(int16_t, alpha_sort) \
+                        i(uint8_t, fx_id) \
+                        i(uint8_t, special_id) \
+                        i(int16_t, K) \
+                        i(uint8_t, L) \
+                        i(uint8_t, animation_mode) \
+                        i(float, du) \
+                        i(float, dv) \
+                        i(float, su) \
+                        i(float, sv)
+                    */
+                    ImGui::PushID(i);
+                    if (ImGui::TreeNode("Material")) 
+                    {
+                        uint32_t flags = material.flags();
+                        glm::vec3 ambient = { material.ambient(0), material.ambient(1), material.ambient(2) };
+                        glm::vec3 diffuse = { material.diffuse(0), material.diffuse(1), material.diffuse(2) };
+                        uint32_t fx_params_0 = material.fx_params(0);
+                        uint32_t fx_params_1 = material.fx_params(1);
+                        uint32_t fx_params_2 = material.fx_params(2);
+                        uint32_t fx_params_3 = material.fx_params(3);
+                        float power = material.power();
+                        float alpha = material.alpha();
+                        uint32_t texture_id = material.texture_id();
+
+                        ImGui::InputScalar("Texture ID", ImGuiDataType_U32, &texture_id);
+                        ImGui::InputScalar("Flags", ImGuiDataType_U32, &flags);
+                        ImGui::InputFloat3("Ambient", &ambient.x);
+                        ImGui::InputFloat3( "Diffuse", &diffuse.x);
+                        ImGui::InputScalar("Power", ImGuiDataType_Float, &power);
+                        ImGui::InputScalar("Alpha", ImGuiDataType_Float, &alpha);
+                        
+                        ImGui::InputScalar("Fx. Params 0", ImGuiDataType_U32, &fx_params_0);
+                        ImGui::InputScalar("Fx. Params 1", ImGuiDataType_U32, &fx_params_1);
+                        ImGui::InputScalar("Fx. Params 2", ImGuiDataType_U32, &fx_params_2);
+                        ImGui::InputScalar("Fx. Params 3", ImGuiDataType_U32, &fx_params_3);
+                        ImGui::TreePop();
+                    }
+                    ImGui::PopID();
+                    i++;
+                }
+                ImGui::TreePop();
+            }
         }
         ImGui::End();
 
@@ -476,7 +565,7 @@ void WelcomeView::on_render()
                 if (m_texture_selected >= 0)
                 {
                     ImGui::BeginChild("ImgTexture");
-                    ImGui::Image((ImTextureID)m_renderer.get_texture(m_texture_selected), ImVec2(128, 128));
+                    ImGui::Image((ImTextureID) m_renderer.get_texture(m_texture_selected), ImVec2(128, 128));
                     ImGui::EndChild();
                 }
             }
