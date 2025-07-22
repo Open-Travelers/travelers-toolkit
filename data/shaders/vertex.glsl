@@ -26,5 +26,6 @@ void main() {
     vec4 color = mix(split_color(l_color), WHITE, u_backdrop_color_usage);
     v_uv = l_uv;
     v_normal = l_normal;
+    v_color = color;
     gl_Position = u_mvp * vec4(l_position, 1.0f);
 }

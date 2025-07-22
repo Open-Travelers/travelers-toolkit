@@ -12,7 +12,7 @@ uniform float u_ambient_power;
 uniform sampler2D u_texture;
 
 void main() {
-    vec4 ambient = u_ambient_power * u_ambient;
+    vec4 ambient = u_ambient_power * vec4(u_ambient, 1.0);
     vec4 final_light_color = ambient;
-    o_color = final_light_color * texture(u_texture, v_uv) * v_color;
+    o_color = texture(u_texture, v_uv) * v_color;
 }
