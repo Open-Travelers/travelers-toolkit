@@ -17,6 +17,7 @@ protected:
 public:
     Bitmap(uint32_t width, uint32_t height, std::vector<uint8_t> data);
     std::vector<uint8_t> const& data() const { return m_data; }
+    uint8_t const* raw_data() const { return m_data.data(); }
 };
 
 class Texture : public IReaderItem

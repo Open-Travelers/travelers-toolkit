@@ -13,7 +13,6 @@ SceneRenderer::~SceneRenderer()
 
 }
 
-
 bool SceneRenderer::load(Twoc::Nu::Scene const* scene)
 {
     if (m_loaded)
@@ -25,34 +24,23 @@ bool SceneRenderer::load(Twoc::Nu::Scene const* scene)
     Gl::check_errors("ShaderLoad");
 
     GLuint vbo;
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    GL_CHECK(glGenBuffers, 1, &vbo);
+    GL_CHECK(glBindBuffer, GL_ARRAY_BUFFER, vbo);
 
     // load textures
-    Gl::check_errors("glEnable");
     m_texture_ids.clear();
-    m_texture_ids.reserve(scene->texture_count());
     for (int i = 0; i < scene->texture_count(); i++)
     {
         auto const& tex = scene->texture(i);
         GLuint id;
-        glGenTextures(1, &id);
-        Gl::check_errors("glGenTextures");
-        glActiveTexture(GL_TEXTURE0);
-        Gl::check_errors("glActiveTexture");
-        glBindTexture(GL_TEXTURE_2D, id);
-        Gl::check_errors("glBindTexture");
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        Gl::check_errors("glTexParameteri");
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        Gl::check_errors("glTexParameteri");
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        Gl::check_errors("glTexParameteri");
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        Gl::check_errors("glTexParameteri");
-
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex.max_width(), tex.max_height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, tex.bitmap(0).data().data());
-        Gl::check_errors("glTexImage2D");
+        GL_CHECK(glGenTextures, 1, &id);
+        GL_CHECK(glBindTexture, GL_TEXTURE_2D, id);
+        GL_CHECK(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        GL_CHECK(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        GL_CHECK(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        GL_CHECK(glTexParameteri, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        GL_CHECK(glTexImage2D, GL_TEXTURE_2D, 0, GL_RGBA, tex.max_width(), tex.max_height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, tex.bitmap(0).raw_data());
+        GL_CHECK(glGenerateMipmap, GL_TEXTURE_2D);
         m_texture_ids.push_back(id);
     }
 
@@ -61,57 +49,43 @@ bool SceneRenderer::load(Twoc::Nu::Scene const* scene)
     for (auto &obj : scene->geometry_objects())
     {
         GLuint vbo, vao;
-        glGenVertexArrays(1, &vao);
-        Gl::check_errors("glGenVertexArrays");
-        glBindVertexArray(vao);
-        Gl::check_errors("glBindVertexArray");
+        GL_CHECK(glGenVertexArrays, 1, &vao);
+        GL_CHECK(glBindVertexArray, vao);
 
         int vertex_count = 0;
         for (auto &mesh : obj.meshes())
             vertex_count += mesh.vertices().size();
 
-        std::cout << "Vertex count: " << vertex_count << std::endl;
-        glGenBuffers(1, &vbo);
-        Gl::check_errors("glGenBuffers");
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        Gl::check_errors("glBindBuffer");
-        glBufferData(GL_ARRAY_BUFFER, vertex_count * sizeof(Twoc::Nu::Vertex), nullptr, GL_STATIC_DRAW);
-        Gl::check_errors("glBindBuffer");
-
+        GL_CHECK(glGenBuffers, 1, &vbo);
+        GL_CHECK(glBindBuffer, GL_ARRAY_BUFFER, vbo);
+        GL_CHECK(glBufferData, GL_ARRAY_BUFFER, vertex_count * sizeof(Twoc::Nu::Vertex), nullptr, GL_STATIC_DRAW);
+        
         std::vector<int> mesh_vertex_offsets;
         int vertex_offset = 0;
 
         for (auto &mesh : obj.meshes())
         {
             auto const& vertices = mesh.vertices();
-            glBufferSubData(GL_ARRAY_BUFFER, vertex_offset * sizeof(Twoc::Nu::Vertex), vertices.size() * sizeof(Twoc::Nu::Vertex), vertices.data());
-            Gl::check_errors("glBufferSubData");
+            GL_CHECK(glBufferSubData, GL_ARRAY_BUFFER, vertex_offset * sizeof(Twoc::Nu::Vertex), vertices.size() * sizeof(Twoc::Nu::Vertex), vertices.data());
             mesh_vertex_offsets.push_back(vertex_offset);
             vertex_offset += vertices.size();
         }
 
         // position
-        glEnableVertexAttribArray(0);
-        Gl::check_errors("glEnableVertexAttribArray");
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Twoc::Nu::Vertex), 0);
-        Gl::check_errors("glVertexAttribPointer");
+        GL_CHECK(glEnableVertexAttribArray, 0);
+        GL_CHECK(glVertexAttribPointer, 0, 3, GL_FLOAT, GL_FALSE, sizeof(Twoc::Nu::Vertex), (void*) Twoc::Nu::Vertex::PositionOffset);
+
         // normal
-        glEnableVertexAttribArray(1);
-        Gl::check_errors("glEnableVertexAttribArray");
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Twoc::Nu::Vertex), (void*)(3*4));
-        Gl::check_errors("glVertexAttribPointer");
+        GL_CHECK(glEnableVertexAttribArray, 1);
+        GL_CHECK(glVertexAttribPointer, 1, 3, GL_FLOAT, GL_FALSE, sizeof(Twoc::Nu::Vertex), (void*) Twoc::Nu::Vertex::NormalOffset);
 
         // UV
-        glEnableVertexAttribArray(2);
-        Gl::check_errors("glEnableVertexAttribArray");
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Twoc::Nu::Vertex), (void*)(3*4+3*4));
-        Gl::check_errors("glVertexAttribPointer");
+        GL_CHECK(glEnableVertexAttribArray, 2);
+        GL_CHECK(glVertexAttribPointer, 2, 2, GL_FLOAT, GL_FALSE, sizeof(Twoc::Nu::Vertex), (void*) Twoc::Nu::Vertex::UvOffset);
 
         // color
-        glEnableVertexAttribArray(3);
-        Gl::check_errors("glEnableVertexAttribArray");
-        glVertexAttribPointer(3, 1, GL_UNSIGNED_INT, GL_FALSE, sizeof(Twoc::Nu::Vertex), (void*)(3*4+3*4+2*4));
-        Gl::check_errors("glVertexAttribPointer");
+        GL_CHECK(glEnableVertexAttribArray, 3);
+        GL_CHECK(glVertexAttribPointer, 3, 1, GL_UNSIGNED_INT, GL_FALSE, sizeof(Twoc::Nu::Vertex), (void*) Twoc::Nu::Vertex::ColorOffset);
 
         RenderObject render_object;
         render_object.Vbo = vbo;
@@ -146,48 +120,40 @@ void SceneRenderer::render(glm::mat4 const& view, glm::mat4 const& projection)
     GLuint ambient_power_loc = m_shader.get_uniform_location("u_ambient_power");
     GLuint backdrop_color_usage_loc = m_shader.get_uniform_location("u_backdrop_color_usage");
     GLuint alpha_loc = m_shader.get_uniform_location("u_alpha");
-
-    glm::mat4 view_projection = projection * view * glm::scale(glm::mat4(1.0f), glm::vec3(-1, 1, 1));
-
+    GLuint texture_loc = m_shader.get_uniform_location("u_texture");
 
     for (auto const& instance : m_scene->instances())
     {
-        glm::mat4 mvp = view_projection * instance.transform_matrix();
-
         int object_id = instance.object_index();
         if (object_id < 0 || object_id >= m_scene->geometry_object_count())
             continue;
 
-        RenderObject render_object = m_render_objects[object_id];
-        glBindVertexArray(render_object.Vao);
-        Gl::check_errors("glBindVertexArray");
-        glUniformMatrix4fv(mvp_loc, 1, GL_FALSE, glm::value_ptr(mvp));
-        Gl::check_errors("glUniformMatrix4fv");
+        glm::mat4 mvp = projection * view * glm::scale(glm::mat4(1.f), glm::vec3(-1, 1, 1)) * instance.transform_matrix();
 
+        RenderObject render_object = m_render_objects[object_id];
+        GL_CHECK(glBindVertexArray, render_object.Vao);
+        GL_CHECK(glUniformMatrix4fv, mvp_loc, 1, GL_FALSE, glm::value_ptr(mvp));
+        
         auto const& geometry_object = m_scene->geometry_object(object_id);
         int mesh_i = 0;
         for (auto const& mesh : geometry_object.meshes())
         {
             int material_index = mesh.material();
             Twoc::Nu::Material const& material = m_scene->material(material_index);
-            glUniform3f(ambient_loc, material.ambient(0), material.ambient(1), material.ambient(2));
-            Gl::check_errors("glUniform3f");
-            //glUniform3fv(diffuse_loc, 1, material.data().diffuse);
-            //Gl::check_errors("glUniform3fv");
-            glUniform1f(ambient_power_loc, material.power());
-            Gl::check_errors("glUniform1f");
-            glUniform1f(backdrop_color_usage_loc, 1.0f);
-            Gl::check_errors("glUniform1f");
-            glUniform1f(alpha_loc, material.alpha());
-            Gl::check_errors("glUniform1f");
 
-            if (material.texture_id() == -1)
+            GL_CHECK(glActiveTexture, GL_TEXTURE0);
+            GL_CHECK(glUniform3f, ambient_loc, material.ambient(0), material.ambient(1), material.ambient(2));
+            GL_CHECK(glUniform3fv, diffuse_loc, 1, material.data().diffuse);
+            GL_CHECK(glUniform1f, ambient_power_loc, material.power());
+            GL_CHECK(glUniform1f, backdrop_color_usage_loc, 1.0f);
+            GL_CHECK(glUniform1f, alpha_loc, material.alpha());
+            GL_CHECK(glUniform1i, texture_loc, 0);
+
+            if (material.texture_id() == -1 || material.texture_id() > m_texture_ids.size())
             {
-                glBindTexture(GL_TEXTURE_2D, 0);
-                Gl::check_errors("glBindTexture");
+                GL_CHECK(glBindTexture, GL_TEXTURE_2D, 0);
             } else {
-                glBindTexture(GL_TEXTURE_2D, m_texture_ids[material.texture_id()]);
-                Gl::check_errors("glBindTexture");
+                GL_CHECK(glBindTexture, GL_TEXTURE_2D, m_texture_ids[material.texture_id()]);
             }
 
             for (auto const& prim : mesh.primitives())
@@ -197,9 +163,7 @@ void SceneRenderer::render(glm::mat4 const& view, glm::mat4 const& projection)
                 auto const& indices = prim.indices();
                 for (auto const& face : faces)
                 {
-                    //std::cout << std::endl;
-                    glDrawElementsBaseVertex(mode, face.Count, GL_UNSIGNED_SHORT, indices.data() + face.Index, render_object.VertexOffsets[mesh_i]);
-                    Gl::check_errors("glDrawElementsBaseVertex");
+                    GL_CHECK(glDrawElementsBaseVertex, mode, face.Count, GL_UNSIGNED_SHORT, indices.data() + face.Index, render_object.VertexOffsets[mesh_i]);
                 }
             }
             mesh_i++;

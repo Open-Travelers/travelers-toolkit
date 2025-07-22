@@ -46,9 +46,19 @@ int Application::run(int argc, char **argv) {
         return 1;
     }
 
-    std::string twoc_root = pfd::select_folder("Select extracted game root...").result();
-    if (twoc_root.empty())
-        return 1;
+    std::string twoc_root;
+    if (argc < 1)
+    {
+        twoc_root = pfd::select_folder("Select extracted game root...").result();
+        if (twoc_root.empty())
+            return 1;
+    } else {
+        twoc_root.append(argv[1]);
+        if (!std::filesystem::is_directory(twoc_root))
+            return 1;
+        if (!std::filesystem::exists(twoc_root))
+            return 1;
+    }
 
     if (!m_data.Project.load(twoc_root))
         return 1;

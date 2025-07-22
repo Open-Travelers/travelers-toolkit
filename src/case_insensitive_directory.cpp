@@ -7,6 +7,7 @@
 namespace fs = std::filesystem;
 CaseInsensitiveDirectory::CaseInsensitiveDirectory(std::filesystem::path const& path) : m_root_path(path)
 {
+    std::cout << "Root path: " << m_root_path << std::endl;
     repopulate();
 }
 
@@ -160,7 +161,7 @@ bool CaseInsensitiveDirectory::repopulate()
         if (entry_map.find(filename) != entry_map.end())
             return false;
 
-        //std::cout << "Mapping " << entry.Name << " -> " << filename << std::endl;
+        // std::cout << "Mapping " << entry.Name << " -> " << filename << std::endl;
         entry_map[filename] = entries.size();
         entries.push_back(entry);
 

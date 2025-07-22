@@ -32,6 +32,11 @@ protected:
     glm::vec2 m_uv;
 
 public:
+    static constexpr size_t PositionOffset = 0;
+    static constexpr size_t NormalOffset = PositionOffset + sizeof(glm::vec3);
+    static constexpr size_t ColorOffset = NormalOffset + sizeof(glm::vec3);
+    static constexpr size_t UvOffset = ColorOffset + sizeof(Color);
+
     Vertex(VertexType0 raw);
     Vertex(glm::vec3 position, glm::vec3 normal, Color color, glm::vec2 uv);
 
