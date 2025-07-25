@@ -75,6 +75,7 @@ static uint32_t pixel_size(uint32_t type)
         return 0;
     }
 }
+
 static uint32_t texture_size_mm(uint32_t type, uint32_t width, uint32_t height, uint32_t mipmaps)
 {
     uint32_t size = width * height * pixel_size(type) >> 3;
@@ -98,10 +99,10 @@ static void decode_raw_rgb8(Twoc::BinaryReader &reader, std::vector<uint8_t> &rg
         uint8_t r = reader.u8();
         uint8_t g = reader.u8();
         uint8_t b = reader.u8();
-        rgba_data[j*4 + 0] = (b);
-        rgba_data[j*4 + 1] = (g);
-        rgba_data[j*4 + 2] = (r);
-        rgba_data[j*4 + 3] = (255);
+        rgba_data.push_back(b);
+        rgba_data.push_back(g);
+        rgba_data.push_back(r);
+        rgba_data.push_back(255);
         j++;
     }
 }
@@ -114,16 +115,16 @@ static void decode_raw_argb8(Twoc::BinaryReader &reader, std::vector<uint8_t> &r
         uint8_t r = reader.u8();
         uint8_t g = reader.u8();
         uint8_t b = reader.u8();
-        rgba_data[i + 0] = (b);
-        rgba_data[i + 1] = (g);
-        rgba_data[i + 2] = (r);
-        rgba_data[i + 3] = (a);
+        rgba_data.push_back(b);
+        rgba_data.push_back(g);
+        rgba_data.push_back(r);
+        rgba_data.push_back(a);
     }
 }
 
 static void decode_palletized_argb8(Twoc::BinaryReader &reader, std::vector<uint8_t> const& palette, std::vector<uint8_t> &rgba_data, uint32_t texture_size, uint32_t type)
-{
-    for (uint32_t i = 0; i < texture_size; i++)
+{   
+    for (int i = 0; i < texture_size; i++)
     {
         uint8_t idx;
         if (type == 4)
@@ -139,15 +140,15 @@ static void decode_palletized_argb8(Twoc::BinaryReader &reader, std::vector<uint
             reader.seek(ReaderBase::Start, i);
             idx = reader.u8();
         }
-
+        
         uint8_t a = palette[idx * 4];
         uint8_t r = palette[idx * 4 + 1];
         uint8_t g = palette[idx * 4 + 2];
         uint8_t b = palette[idx * 4 + 3];
-        rgba_data[i*4 + 0] = (b);
-        rgba_data[i*4 + 1] = (g);
-        rgba_data[i*4 + 2] = (r);
-        rgba_data[i*4 + 3] = (a);
+        rgba_data.push_back(b);
+        rgba_data.push_back(g);
+        rgba_data.push_back(r);
+        rgba_data.push_back(a);
     }
 }
 
@@ -253,16 +254,77 @@ static void decode_rgb5a3(Twoc::BinaryReader &reader, std::vector<uint8_t> &rgba
 
 Bitmap::Bitmap(uint32_t width, uint32_t height, std::vector<uint8_t> data) : m_width(width), m_height(height), m_data(data) { }
 
+static size_t palette_size_mm(uint32_t type)
+{
+    if (type == 4)
+        return 0x40;
+    else if (type == 5)
+        return 0x400;
+    else
+        return 0;
+}
+
+bool Texture::read(Twoc::BinaryReader &reader, size_t fullsize)
+{
+    auto type = reader.u32();
+    auto width = reader.u32();
+    auto height = reader.u32();
+    auto mipmap_count = reader.u32();
+    if (mipmap_count == 1)
+        mipmap_count = 0;
+
+    auto palette_size = palette_size_mm(type);
+    std::cout << "Reading texture of type " << std::to_string(type) << " of width " << std::to_string(width) << " and height " << std::to_string(height) << ". Mipmaps: " << std::to_string(mipmap_count) << ", palette: " << std::to_string(palette_size) << std::endl;
+    
+    auto texture_size = texture_size_mm(type, width, height, mipmap_count);
+    auto texture_data = reader.array<uint8_t>(texture_size);
+    
+    MemoryBinaryReader texture_reader(reader.file_endianness());
+    if (!texture_reader.open(texture_data.data(), texture_size))
+        return false;
+
+    std::vector<uint8_t> rgba_data;
+    rgba_data.reserve(width * height * 4);
+
+    switch (type)
+    {
+    case 2: decode_raw_rgb8(texture_reader, rgba_data, texture_size); break;
+    case 3: decode_raw_argb8(texture_reader, rgba_data, texture_size); break;
+    case 4: case 5:
+    {
+        auto palette_data = reader.array<uint8_t>(palette_size); 
+        
+        if (type == 4)
+            texture_size *= 2;
+    
+        decode_palletized_argb8(texture_reader, palette_data, rgba_data, texture_size, type);
+    } break;
+    case 0x80: decode_dxt(texture_reader, rgba_data, texture_size, width, height); break;
+    case 0x81: decode_rgb5a3(texture_reader, rgba_data, texture_size, width, height); break;
+    default:
+        std::cerr << "Unsupported texture type " << std::to_string(type) << "!" << std::endl;
+        return false;
+    }
+
+    m_mipmaps.push_back(Bitmap(width, height, rgba_data));
+    m_type = type;
+    m_max_width = width;
+    m_max_height = height;
+    return true;
+}
+
+#if 0
 bool Texture::read(Twoc::BinaryReader &reader, size_t fullsize)
 { 
     (void) fullsize;
+    std::vector<uint8_t> palette_data;
+    std::vector<uint8_t> texture_data;
     uint32_t type = reader.u32();
     uint32_t width = reader.u32();
     uint32_t height = reader.u32();
     uint32_t mipmap_count = reader.u32();
     if (mipmap_count == 1) 
         mipmap_count = 0;
-
 
     uint32_t texture_size = texture_size_mm(type, width, height, mipmap_count);
     if ((type & 0x80) != 0)
@@ -271,49 +333,34 @@ bool Texture::read(Twoc::BinaryReader &reader, size_t fullsize)
         mipmap_count = 0;
     }
 
-    std::vector<uint8_t> texture_data = reader.array<uint8_t>(texture_size);
+    size_t palette_size = palette_size_mm(type);
 
-    size_t palette_size = 0;
-    if (type == 4)
-        palette_size = 0x40;
-    else if (type == 5)
-        palette_size = 0x400;
+    texture_data = reader.array<uint8_t>(texture_size);
+    if (palette_size != 0)
+        palette_data = reader.array<uint8_t>(palette_size);
 
-    std::vector<uint8_t> rgba_data;
-    rgba_data.resize(width * height * 4);
-
+    std::vector<uint8_t> rgba_data(width * height * 4);
+    
     MemoryBinaryReader texture_reader(reader.file_endianness());
     if (!texture_reader.open(texture_data.data(), texture_size))
         return false;
 
     switch (type)
     {
-    case 2:
-        decode_raw_rgb8(texture_reader, rgba_data, texture_size);
-        break;
-
-    case 3:
-        decode_raw_argb8(texture_reader, rgba_data, texture_size);
-        break;
+    case 2: decode_raw_rgb8(texture_reader, rgba_data, texture_size); break;
+    case 3: decode_raw_argb8(texture_reader, rgba_data, texture_size); break;
 
     case 4: case 5: {
-        std::vector<uint8_t> palette_data = reader.array<uint8_t>(palette_size);
         if (type == 4)
             texture_size *= 2;
-
         decode_palletized_argb8(texture_reader, palette_data, rgba_data, texture_size, type);
     } break;
 
-    case 0x80:
-        decode_dxt(texture_reader, rgba_data, texture_size, width, height);
-        break;
-
-    case 0x81:
-        decode_rgb5a3(texture_reader, rgba_data, texture_size, width, height);
-        break;
-    case 0x82:
-        break;
-
+    case 0x80: decode_dxt(texture_reader, rgba_data, texture_size, width, height); break;
+    case 0x81: decode_rgb5a3(texture_reader, rgba_data, texture_size, width, height); break;
+    default:
+        std::cerr << "Unsupported texture type " << std::to_string(type) << "!" << std::endl;
+        return false;
     }
 
     m_mipmaps.push_back(Bitmap(width, height, rgba_data));
@@ -323,7 +370,7 @@ bool Texture::read(Twoc::BinaryReader &reader, size_t fullsize)
     std::cout << "Texture of type " << std::to_string(type) << " of width " << std::to_string(width) << " and height " << std::to_string(height) << ". Mipmaps: " << std::to_string(mipmap_count) << ", palette: " << std::to_string(palette_size) << ", tex size: " << std::to_string(rgba_data.size()) << std::endl;
     return true; 
 }
-
+#endif
 bool Texture::validate() { return m_mipmaps.size() != 0; }
 
 
