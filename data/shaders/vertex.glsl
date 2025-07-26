@@ -16,8 +16,8 @@ vec4 split_color(uint color)
 {
     vec4 result;
     result.r = ((color >> 8) & uint(0xff)) / 256.0;
-    result.g = ((color >> 16) & uint(0xff)) / 256.0;
-    result.b = ((color >> 24) & uint(0xff)) / 256.0;
+    result.b = ((color >> 16) & uint(0xff)) / 256.0;
+    result.g = ((color >> 24) & uint(0xff)) / 256.0;
     result.a = float(color & uint(0xff));
     return result;
 }
