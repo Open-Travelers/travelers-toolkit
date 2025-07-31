@@ -130,4 +130,12 @@ namespace UI {
             return;
         view->do_char_write(code);
     }
+
+    void Manager::do_process_action(App::Action action)
+    {
+        auto view = get_view(m_view_current);
+        if (!view)
+            return;
+        view->do_process_action(action);
+    }
 }

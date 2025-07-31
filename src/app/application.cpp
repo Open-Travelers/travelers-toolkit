@@ -2,18 +2,11 @@ extern "C" {
 #include <glad/glad.h>
 }
 #include <SFML/OpenGL.hpp>
-#include <cstring>
 #include <iostream>
 #include <imgui.h>
-#include <cmath>
 #include <portable-file-dialogs.h>
 #include <filesystem>
-#include <regex>
-#include <algorithm>
-#include <cctype>
 
-#include "../file_binary_reader.h"
-#include "../twoc/executable.h"
 #include "../imgui-SFML.h"
 #include "../imgui_impl_opengl3.h"
 
@@ -29,6 +22,7 @@ bool key_held_fn(UI::Key key)
 {
     return sf::Keyboard::isKeyPressed((sf::Keyboard::Key) key);
 }
+
 Application::Application() 
 {
     m_ui.add_view(std::make_shared<WelcomeView>(m_data, key_held_fn));
@@ -47,7 +41,7 @@ int Application::run(int argc, char **argv) {
     }
 
     std::string twoc_root;
-    if (argc < 1)
+    if (argc <= 1)
     {
         twoc_root = pfd::select_folder("Select extracted game root...").result();
         if (twoc_root.empty())
@@ -140,6 +134,13 @@ int Application::run(int argc, char **argv) {
             }
         }
 
+        // process pending actions
+        while (!m_action_queue.empty()) {
+            auto action = m_action_queue.front();
+            m_ui.do_process_action(action);
+            m_action_queue.pop();
+        }
+        
         // update imgui state
         sf::Time elapsed = delta_clock.restart();
         dt = elapsed.asSeconds();

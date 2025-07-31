@@ -5,6 +5,7 @@
 #include <memory>
 #include "types.h"
 #include "window.h"
+#include "../app/action.h"
 #include "../app/data.h"
 
 namespace UI {
@@ -38,7 +39,8 @@ protected:
     virtual void on_render() = 0;
 
     virtual void on_resize(int width, int height) {}
-
+    virtual void on_process_action(App::Action action) {}
+    
     virtual void on_mouse_press(MouseButton button, int x, int y) {}
     virtual void on_mouse_release(MouseButton button, int x, int y) {}
     virtual void on_mouse_moved(int x, int y) {}
@@ -52,6 +54,7 @@ public:
     void do_render();
 
     void do_resize(int width, int height);
+    void do_process_action(App::Action action);
 
     void do_mouse_press(MouseButton button, int x, int y);
     void do_mouse_release(MouseButton button, int x, int y);

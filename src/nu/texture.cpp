@@ -36,6 +36,7 @@ namespace Nu {
         }
         return size;
     }
+    
     bool Texture::read(BinaryStream& stream)
     {
         auto type = stream.read_word();

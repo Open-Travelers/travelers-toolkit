@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <memory>
+#include "app/action.h"
 #include "types.h"
 #include "view.h"
 
@@ -41,6 +42,7 @@ public:
     void do_key_release(Key key, ExtraKeys extra);
     void do_char_write(uint32_t code);
 
+    void do_process_action(App::Action action);
 protected:
     void handle_view_pending_change();
 };

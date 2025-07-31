@@ -57,6 +57,10 @@ void View::do_char_write(uint32_t code)
     on_char_write(code);
 }
 
+void View::do_process_action(App::Action action)
+{
+    on_process_action(action);
+}
 
 void View::do_load(int display_width, int display_height)
 {
