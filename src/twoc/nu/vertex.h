@@ -24,6 +24,7 @@ struct Color {
     uint8_t Alpha;
 };
 
+
 class Vertex {
 protected:
     glm::vec3 m_position;

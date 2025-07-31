@@ -23,23 +23,25 @@ bool Project::load(const std::string &directory)
         return false;
     } else if (root_dir->file_exists("crashwoc.elf"))
     {
-#if 0
-        FileBinaryReader executable_file(Twoc::ReaderEndianness::Big);
-        if (!executable_file.open(root_path / "crashwoc.elf"))
+#if 1
+        auto reader = root_dir->file_open("crashwoc.elf", Twoc::ReaderEndianness::Big);
+        if (!reader)
         {
             (void) pfd::message("Fatal", "Gamecube executable exists but could not be opened!", pfd::choice::ok, pfd::icon::error);
             return false;
         }
-
-        Twoc::ElfExecutable *exe = Twoc::ElfExecutable::from_reader(executable_file);
-        if (!exe)
+        
+        auto *executable_file = Twoc::ElfExecutable::from_reader(*reader);
+        if (!executable_file)
         {
             (void) pfd::message("Fatal", "Gamecube executable couldn't be parsed!", pfd::choice::ok, pfd::icon::error);
             return false;
         }
 
-        m_executable = exe;
+        m_executable = executable_file;
         m_endianness = Twoc::ReaderEndianness::Big;
+#else
+        return false;
 #endif
     } else if (root_dir->file_exists("system.cnf"))
     {
@@ -52,6 +54,8 @@ bool Project::load(const std::string &directory)
             return false;
         }
 
+        // Different PS2 revisions will have differently named executable files.
+        // Parsing system.cnf file will get that executable file's name.
         std::regex boot_regex("^\\w+\\s*=\\s*\\w+:\\\\(\\w\\w\\w\\w_\\d\\d\\d\\.\\d\\d);\\d");
         std::string line;
         std::string executable_filename;
@@ -65,14 +69,14 @@ bool Project::load(const std::string &directory)
             }
         }
 
-        std::unique_ptr<Twoc::BinaryReader> reader = root_dir->file_open(executable_filename, Twoc::ReaderEndianness::Little);
+        auto reader = root_dir->file_open(executable_filename, Twoc::ReaderEndianness::Little);
         if (!reader)
         {
             (void) pfd::message("Fatal", "PS2 executable doesn't exist or couldn't be found!", pfd::choice::ok, pfd::icon::error);
             return false;
         }
 
-        Twoc::ElfExecutable *exe = Twoc::ElfExecutable::from_reader(*reader);
+        auto *exe = Twoc::ElfExecutable::from_reader(*reader);
         if (!exe)
         {
             (void) pfd::message("Fatal", "PS2 executable couldn't be parsed!", pfd::choice::ok, pfd::icon::error);
