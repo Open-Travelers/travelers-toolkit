@@ -15,5 +15,5 @@ void main() {
     vec4 ambient = u_ambient_power * vec4(u_ambient, 1.0);
     vec4 final_light_color = ambient;
     vec4 temp_color = texture(u_texture, v_uv) * v_color;
-    o_color = vec4(temp_color.r, temp_color.g, temp_color.b, temp_color.a);
+    o_color = vec4(temp_color.b, temp_color.g, temp_color.a, temp_color.a);
 }

@@ -2,6 +2,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "gl.h"
+#include "imgui.h"
 
 SceneRenderer::SceneRenderer()
 {
@@ -13,13 +14,23 @@ SceneRenderer::~SceneRenderer()
 
 }
 
+std::unique_ptr<RenderableScene> SceneRenderer::load_scene(Twoc::Nu::Scene const* scene)
+{
+
+    return {};
+}
+
 bool SceneRenderer::load(Twoc::Nu::Scene const* scene)
 {
     if (m_loaded)
         unload();
 
-    // load shader
+    // load regular shader
     if (!m_shader.load("shaders/vertex.glsl", "shaders/fragment.glsl"))
+        return false;
+    Gl::check_errors("ShaderLoad");
+
+    if (!m_shader.load("shaders/instanced_vertex.glsl", "shaders/instanced_fragment.glsl"))
         return false;
     Gl::check_errors("ShaderLoad");
 
@@ -107,6 +118,12 @@ bool SceneRenderer::load(Twoc::Nu::Scene const* scene)
     return true;
 }
 
+static float Transform_Flip[16] = {
+-1, 0, 0, 0, 
+0, 1, 0, 0, 
+0, 0, 1, 0, 
+0, 0, 0, 1
+};
 void SceneRenderer::render(glm::mat4 const& view, glm::mat4 const& projection)
 {
     if (!m_scene || !m_loaded)
@@ -128,13 +145,14 @@ void SceneRenderer::render(glm::mat4 const& view, glm::mat4 const& projection)
         if (object_id < 0 || object_id >= m_scene->geometry_object_count())
             continue;
 
-        glm::mat4 mvp = projection * view * glm::scale(glm::mat4(1.f), glm::vec3(-1, 1, 1)) * instance.transform_matrix();
-
         RenderObject render_object = m_render_objects[object_id];
         GL_CHECK(glBindVertexArray, render_object.Vao);
-        GL_CHECK(glUniformMatrix4fv, mvp_loc, 1, GL_FALSE, glm::value_ptr(mvp));
         
         auto const& geometry_object = m_scene->geometry_object(object_id);
+        glm::mat4 transform = instance.transform_matrix() * glm::translate(glm::mat4(1), geometry_object.origin());
+        glm::mat4 flipper = glm::make_mat4(Transform_Flip);
+        glm::mat4 mvp = projection * view * flipper * transform;
+
         int mesh_i = 0;
         for (auto const& mesh : geometry_object.meshes())
         {
@@ -142,10 +160,11 @@ void SceneRenderer::render(glm::mat4 const& view, glm::mat4 const& projection)
             Twoc::Nu::Material const& material = m_scene->material(material_index);
 
             GL_CHECK(glActiveTexture, GL_TEXTURE0);
+            GL_CHECK(glUniformMatrix4fv, mvp_loc, 1, GL_FALSE, glm::value_ptr(mvp));
             GL_CHECK(glUniform3f, ambient_loc, material.ambient(0), material.ambient(1), material.ambient(2));
             GL_CHECK(glUniform3fv, diffuse_loc, 1, material.data().diffuse);
             GL_CHECK(glUniform1f, ambient_power_loc, material.power());
-            GL_CHECK(glUniform1f, backdrop_color_usage_loc, 1.0f);
+            GL_CHECK(glUniform1f, backdrop_color_usage_loc, 0.0f);
             GL_CHECK(glUniform1f, alpha_loc, material.alpha());
             GL_CHECK(glUniform1i, texture_loc, 0);
 
@@ -158,7 +177,7 @@ void SceneRenderer::render(glm::mat4 const& view, glm::mat4 const& projection)
 
             for (auto const& prim : mesh.primitives())
             {
-                GLenum mode = (prim.type() == Twoc::Nu::PrimitiveType::TriangleStrip) ? GL_TRIANGLE_STRIP : GL_TRIANGLES;
+                auto mode = (prim.type() == Twoc::Nu::PrimitiveType::TriangleStrip) ? GL_TRIANGLE_STRIP : GL_TRIANGLES;
                 auto const& faces = prim.faces();
                 auto const& indices = prim.indices();
                 for (auto const& face : faces)
@@ -168,11 +187,22 @@ void SceneRenderer::render(glm::mat4 const& view, glm::mat4 const& projection)
             }
             mesh_i++;
         }
-
     }
+    /*
+    if (ImGui::Begin("Weird"))
+    {
+        for (int row = 0; row < 4; row++)
+        {
+            ImGui::PushID(row);
+            ImGui::InputFloat4("##Matrix", Transform_Flip + row * 4);
+            ImGui::PopID();
+        }
+    }
+    ImGui::End();*/
+    
 }
 
-void SceneRenderer::render_instance(size_t index, glm::mat4 const& view, glm::mat4 const& projection)
+void SceneRenderer::render_instances(size_t index, glm::mat4 const& view, glm::mat4 const& projection, std::vector<glm::mat4> matrices)
 {
 
 }

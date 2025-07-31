@@ -3,6 +3,7 @@ layout (location=0) in vec3 l_position;
 layout (location=1) in vec3 l_normal;
 layout (location=2) in vec2 l_uv;
 layout (location=3) in uint l_color;
+layout (location=4) in mat4 l_transform_matrix;
 
 uniform float u_backdrop_color_usage;
 uniform mat4 u_mvp;
@@ -16,9 +17,9 @@ vec4 split_color(uint color)
 {
     vec4 result;
     result.a = float(color & uint(0xff));
-    result.b = ((color >> 8) & uint(0xff)) / 256.0;
-    result.g  = ((color >> 16) & uint(0xff)) / 256.0;
-    result.r = ((color >> 24) & uint(0xff)) / 256.0;
+    result.r = ((color >> 8) & uint(0xff)) / 256.0;
+    result.b = ((color >> 16) & uint(0xff)) / 256.0;
+    result.g = ((color >> 24) & uint(0xff)) / 256.0;
     return result;
 }
 
