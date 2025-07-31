@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <imgui.h>
 #include <portable-file-dialogs.h>
 #include <stdexcept>
@@ -142,7 +143,7 @@ void WelcomeView::on_update(float dt)
 
 void WelcomeView::on_resize(int width, int height)
 {
-    m_projection_matrix = glm::perspectiveFov(glm::radians(90.f), (float)width, (float)height, 0.01f, 100.f);
+    m_projection_matrix = glm::perspectiveFov(glm::radians(90.f), (float)width, (float)height, 0.01f, 5000.f);
     glViewport(0, 0, width, height);
 }
 
@@ -457,6 +458,32 @@ void WelcomeView::on_render()
                 }
                 ImGui::TreePop();
             }
+            if (ImGui::TreeNodeEx("Splines"))
+            {
+                int i = 0;
+                for (auto const& spline : m_scene->splines())
+                {
+                    std::cout << spline.name() << std::endl;
+                    ImGui::PushID(i);
+                    if (ImGui::TreeNode(spline.name().c_str()))
+                    {
+                        int j = 0;
+                        for (auto const& pt : spline.points())
+                        {
+                            glm::vec3 copy = pt;
+                            ImGui::PushID(j);
+                            ImGui::InputFloat3("Pos", &copy.x);
+                            j++;
+                            ImGui::PopID();
+                        }
+                        ImGui::TreePop();
+                    }
+                    ImGui::PopID();
+                    i++;
+                }
+                ImGui::TreePop();
+            }
+
             if (ImGui::TreeNodeEx("Instances"))
             {
                 int i = 0;
@@ -495,26 +522,6 @@ void WelcomeView::on_render()
                 int i = 0;
                 for (auto const& material : m_scene->materials())
                 {
-                    /*
-                        i(uint32_t, p_next) \
-                        i(uint32_t, flags) \
-                        a(float, ambient, 3) \
-                        a(float, diffuse, 3) \
-                        a(uint32_t, fx_params, 4) \
-                        i(float, power) \
-                        i(float, alpha) \
-                        i(uint32_t, texture_id) \
-                        i(int16_t, alpha_sort) \
-                        i(uint8_t, fx_id) \
-                        i(uint8_t, special_id) \
-                        i(int16_t, K) \
-                        i(uint8_t, L) \
-                        i(uint8_t, animation_mode) \
-                        i(float, du) \
-                        i(float, dv) \
-                        i(float, su) \
-                        i(float, sv)
-                    */
                     ImGui::PushID(i);
                     if (ImGui::TreeNode("Material")) 
                     {
@@ -528,8 +535,14 @@ void WelcomeView::on_render()
                         float power = material.power();
                         float alpha = material.alpha();
                         uint32_t texture_id = material.texture_id();
-
-                        ImGui::InputScalar("Texture ID", ImGuiDataType_U32, &texture_id);
+                        int16_t alpha_sort = material.alpha_sort();
+                        uint8_t fx_id = material.fx_id();
+                        int16_t K = material.K();
+                        uint8_t L = material.L();
+                        uint8_t animation_mode = material.animation_mode();
+                        float dudv[2] = { material.du(), material.dv() };
+                        float susv[2] = { material.su(), material.sv() };
+                        ImGui::InputScalar("Texture ID", ImGuiDataType_S32, &texture_id);
                         ImGui::InputScalar("Flags", ImGuiDataType_U32, &flags);
                         ImGui::InputFloat3("Ambient", &ambient.x);
                         ImGui::InputFloat3( "Diffuse", &diffuse.x);
@@ -540,6 +553,13 @@ void WelcomeView::on_render()
                         ImGui::InputScalar("Fx. Params 1", ImGuiDataType_U32, &fx_params_1);
                         ImGui::InputScalar("Fx. Params 2", ImGuiDataType_U32, &fx_params_2);
                         ImGui::InputScalar("Fx. Params 3", ImGuiDataType_U32, &fx_params_3);
+                        ImGui::InputScalar("Alpha Sort", ImGuiDataType_S16, &alpha_sort);
+                        ImGui::InputScalar("FX ID", ImGuiDataType_U8, &fx_id);
+                        ImGui::InputScalar("K", ImGuiDataType_S16, &K);
+                        ImGui::InputScalar("L", ImGuiDataType_U8, &L);
+                        ImGui::InputScalar("Animation Mode", ImGuiDataType_U8, &animation_mode);
+                        ImGui::InputScalarN("DU/DV", ImGuiDataType_Float, &dudv, 2);
+                        ImGui::InputScalarN("SU/SV", ImGuiDataType_Float, &susv, 2);
                         ImGui::TreePop();
                     }
                     ImGui::PopID();

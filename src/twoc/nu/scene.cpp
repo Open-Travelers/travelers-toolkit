@@ -16,6 +16,8 @@
 #define BLK_SPEC (0x43455053)
 #define BLK_ALIB (0x42494C41)
 #define BLK_TAS0 (0x30534154)
+#define BLK_LDIR (0x5249444c)
+#define BLK_SPHE (0x45485053)
 namespace Twoc::Nu
 {
 
@@ -251,8 +253,10 @@ bool Scene::read_spline_set(Twoc::BinaryReader &reader)
             points.emplace_back(x, y, z);
         }
 
-        splines.push_back(Spline("", points));
+        splines.push_back(Spline(nametable_index, points));
     }
+
+    m_splines = splines;
     return true;
 }
 
@@ -314,6 +318,12 @@ bool Scene::read(Twoc::BinaryReader &reader, size_t fullsize)
         case BLK_TAS0:
             result = read_texture_animation_set(reader);
             break;
+        case BLK_LDIR:
+            result = true;
+            break;
+        case BLK_SPHE:
+            result = true;
+            break;
         default:
             std::cerr << "Unknown level-1 header: " << std::to_string(block) << "!" << std::endl;
             return false;
@@ -327,7 +337,15 @@ bool Scene::read(Twoc::BinaryReader &reader, size_t fullsize)
         end_block(reader);
     }
 
-    std::cout << m_textures.size() << std::endl;
+    size_t i = 0;
+    for (auto &spline : m_splines)
+    {
+        auto name = nametable_entry(spline.m_name_index);
+        spline.update_name(name);
+        m_spline_lut[name] = i;
+        i++;
+    }
+
     return true;
 }
 
