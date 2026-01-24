@@ -15,10 +15,10 @@ const vec4 WHITE = vec4(1.0, 1.0, 1.0, 1.0);
 vec4 split_color(uint color)
 {
     vec4 result;
-    result.a = float(color & uint(0xff));
-    result.b = ((color >> 8) & uint(0xff)) / 256.0;
-    result.g  = ((color >> 16) & uint(0xff)) / 256.0;
-    result.r = ((color >> 24) & uint(0xff)) / 256.0;
+    result.a = float((color & uint(0xff000000)) >> 24) / 255.0;
+    result.r = float((color & uint(0x00ff0000)) >> 16) / 255.0;
+    result.b = float((color & uint(0x0000ff00)) >> 8) / 255.0;
+    result.g = float((color & uint(0x000000ff))) / 255.0;
     return result;
 }
 

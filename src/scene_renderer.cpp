@@ -70,7 +70,7 @@ bool SceneRenderer::load(Twoc::Nu::Scene const* scene)
         GL_CHECK(glGenBuffers, 1, &vbo);
         GL_CHECK(glBindBuffer, GL_ARRAY_BUFFER, vbo);
         GL_CHECK(glBufferData, GL_ARRAY_BUFFER, vertex_count * sizeof(Twoc::Nu::Vertex), nullptr, GL_STATIC_DRAW);
-        
+
         std::vector<int> mesh_vertex_offsets;
         int vertex_offset = 0;
 
@@ -119,13 +119,15 @@ bool SceneRenderer::load(Twoc::Nu::Scene const* scene)
 }
 
 static float Transform_Flip[16] = {
--1, 0, 0, 0, 
-0, 1, 0, 0, 
-0, 0, 1, 0, 
-0, 0, 0, 1
+    -1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, 1
 };
 void SceneRenderer::render(glm::mat4 const& view, glm::mat4 const& projection)
 {
+    static bool flip_dir = true;
+    static bool mvp_dir = true;
     if (!m_scene || !m_loaded)
         return;
 
@@ -147,11 +149,20 @@ void SceneRenderer::render(glm::mat4 const& view, glm::mat4 const& projection)
 
         RenderObject render_object = m_render_objects[object_id];
         GL_CHECK(glBindVertexArray, render_object.Vao);
-        
+
         auto const& geometry_object = m_scene->geometry_object(object_id);
-        glm::mat4 transform = instance.transform_matrix() * glm::translate(glm::mat4(1), geometry_object.origin());
-        glm::mat4 flipper = glm::make_mat4(Transform_Flip);
-        glm::mat4 mvp = projection * view * flipper * transform;
+        glm::mat4 instance_modified_matrix = instance.transform_matrix();
+
+        instance_modified_matrix[0].w = 0;
+        instance_modified_matrix[1].w = 0;
+        instance_modified_matrix[2].w = 0;
+        instance_modified_matrix[3].w = 1;
+
+        auto gobj_translate = glm::translate(glm::mat4(1), geometry_object.origin());
+        auto flipper = glm::make_mat4(Transform_Flip);
+
+        glm::mat4 transform = flipper * instance_modified_matrix;
+        glm::mat4 mvp = (mvp_dir ? projection * view * transform : transform * view * projection);;
 
         int mesh_i = 0;
         for (auto const& mesh : geometry_object.meshes())
@@ -188,18 +199,14 @@ void SceneRenderer::render(glm::mat4 const& view, glm::mat4 const& projection)
             mesh_i++;
         }
     }
-    /*
+
     if (ImGui::Begin("Weird"))
     {
-        for (int row = 0; row < 4; row++)
-        {
-            ImGui::PushID(row);
-            ImGui::InputFloat4("##Matrix", Transform_Flip + row * 4);
-            ImGui::PopID();
-        }
+        ImGui::Checkbox("Flip Direction", &flip_dir);
+        ImGui::Checkbox("MVP Direction", &mvp_dir);
+        ImGui::End();
     }
-    ImGui::End();*/
-    
+
 }
 
 void SceneRenderer::render_instances(size_t index, glm::mat4 const& view, glm::mat4 const& projection, std::vector<glm::mat4> matrices)
