@@ -11,3 +11,6 @@
 [submodule "ext/cppfs"]
 	path = ext/cppfs
 	url = https://github.com/cginternals/cppfs
+[submodule "ext/glfw"]
+	path = ext/glfw
+	url = https://github.com/glfw/glfw.git

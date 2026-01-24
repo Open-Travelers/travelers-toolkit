@@ -1,6 +1,5 @@
 #pragma once
 
-#include <SFML/Graphics.hpp>
 #include "../ui/manager.h"
 #include "action.h"
 #include "data.h"

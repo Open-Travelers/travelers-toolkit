@@ -12,7 +12,12 @@ struct ExtraKeys {
 enum class MouseButton {
     LEFT,
     RIGHT,
-    MIDDLE
+    MIDDLE,
+    FOUR,
+    FIVE,
+    SIX,
+    SEVEN,
+    EIGHT
 };
 
 enum class Key {

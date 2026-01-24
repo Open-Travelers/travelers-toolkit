@@ -26,7 +26,7 @@ protected:
     std::vector<std::string> m_texture_names;
     int m_texture_selected { -1 };
 
-    std::string const& texture_name(int index) const { return m_texture_names[index]; }
+    [[nodiscard]] std::string const& texture_name(int index) const { return m_texture_names[index]; }
     bool load_scenes();
     bool load_scene(Twoc::Nu::Scene *scene);
 
@@ -37,9 +37,9 @@ protected:
     void on_update(float dt) override;
     void on_render() override;
 
-    void on_mouse_press(UI::MouseButton button, int x, int y) override;
-    void on_mouse_release(UI::MouseButton button, int x, int y) override;
-    void on_mouse_moved(int x, int y) override;
+    void on_mouse_press(UI::MouseButton button, double x, double y) override;
+    void on_mouse_release(UI::MouseButton button, double x, double y) override;
+    void on_mouse_moved(double x, double y) override;
 
 
 public:

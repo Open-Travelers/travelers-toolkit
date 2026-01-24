@@ -58,7 +58,7 @@ namespace UI {
         handle_view_pending_change();
     }
 
-    void Manager::do_update(float dt) 
+    void Manager::do_update(double dt)
     {
         auto view = get_view(m_view_current);
         if (!view)
@@ -87,28 +87,34 @@ namespace UI {
         view->do_resize(width, height);
     }
 
-    void Manager::do_mouse_press(MouseButton button, int x, int y) 
+    void Manager::do_mouse_press(MouseButton button, double x, double y)
     {
         auto view = get_view(m_view_current);
         if (!view)
             return;
         view->do_mouse_press(button, x, y);
     }
-    void Manager::do_mouse_release(MouseButton button, int x, int y) 
+    void Manager::do_mouse_release(MouseButton button, double x, double y)
     {
         auto view = get_view(m_view_current);
         if (!view)
             return;
         view->do_mouse_release(button, x, y);
     }
-    void Manager::do_mouse_moved(int x, int y) 
+    void Manager::do_mouse_moved(double x, double y)
     {
         auto view = get_view(m_view_current);
         if (!view)
             return;
         view->do_mouse_moved(x, y);
     }
-
+    void Manager::do_mouse_wheel(bool is_horizontal, double offset)
+    {
+        auto view = get_view(m_view_current);
+        if (!view)
+            return;
+        view->do_mouse_wheel(is_horizontal, offset);
+    }
     void Manager::do_key_press(Key key, ExtraKeys extra) 
     {
         auto view = get_view(m_view_current);

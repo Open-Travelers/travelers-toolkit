@@ -92,19 +92,19 @@ UI::ViewChange WelcomeView::on_unload()
     return UI::ViewChange::CHANGE;
 }
 
-void WelcomeView::on_mouse_press(UI::MouseButton button, int x, int y)
+void WelcomeView::on_mouse_press(UI::MouseButton button, double x, double y)
 {
     if (button == UI::MouseButton::RIGHT)
         m_rotating_camera = true;
 }
 
-void WelcomeView::on_mouse_release(UI::MouseButton button, int x, int y)
+void WelcomeView::on_mouse_release(UI::MouseButton button, double x, double y)
 {
     if (button == UI::MouseButton::RIGHT)
         m_rotating_camera = false;
 }
 
-void WelcomeView::on_mouse_moved(int x, int y)
+void WelcomeView::on_mouse_moved(double x, double y)
 {
     int dx = x - m_last_mouse_x;
     int dy = y - m_last_mouse_y;

@@ -28,15 +28,15 @@ public:
     void change_view(size_t view);
 
 public:
-    void do_update(float dt);
+    void do_update(double dt);
     void do_render();
 
     void do_resize(int width, int height);
 
-    void do_mouse_press(MouseButton button, int x, int y);
-    void do_mouse_release(MouseButton button, int x, int y);
-    void do_mouse_moved(int x, int y);
-    void do_mouse_wheel(bool is_horizontal, float delta);
+    void do_mouse_press(MouseButton button, double x, double y);
+    void do_mouse_release(MouseButton button, double x, double y);
+    void do_mouse_moved(double x, double y);
+    void do_mouse_wheel(bool is_horizontal, double delta);
 
     void do_key_press(Key key, ExtraKeys extra);
     void do_key_release(Key key, ExtraKeys extra);

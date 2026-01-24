@@ -12,26 +12,27 @@ set(EXT_INCLUDES ext/portable-file-dialogs)
 
 # opengl
 if(UNIX AND NOT APPLE)
+    set(OpenGL_GL_PREFERENCE GLVND)
     find_package(OpenGL REQUIRED)
     set(LIBRARIES ${LIBRARIES} ${OPENGL_LIBRARY})
 elseif (WIN32)
     set(LIBRARIES opengl32)
 endif()
 
-# sfml
-include(FetchContent)
-FetchContent_Declare(SFML
-        GIT_REPOSITORY https://github.com/SFML/SFML.git
-        GIT_TAG 2.6.x)
-FetchContent_MakeAvailable(SFML)
+# glfw
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "GLFW lib only")
+set(GLFW_INSTALL OFF CACHE BOOL "GLFW lib only")
+add_subdirectory(ext/glfw)
+
 set(LIBRARIES
         ${LIBRARIES}
-        sfml-graphics)
+        glfw)
 
 # imgui
 set(SOURCES
         ${SOURCES}
-        src/imgui-SFML.cpp
+        src/imgui_impl_glfw.cpp
+        src/imgui_impl_opengl3.cpp
         ext/imgui/imgui.cpp
         ext/imgui/imgui_draw.cpp
         ext/imgui/imgui_widgets.cpp
