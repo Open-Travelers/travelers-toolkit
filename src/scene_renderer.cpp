@@ -59,6 +59,15 @@ bool SceneRenderer::load(Twoc::Nu::Scene const* scene)
     int object_index = 0;
     for (auto &obj : scene->geometry_objects())
     {
+        if (obj.meshes().size() == 0) {
+            RenderObject render_object;
+            render_object.Vbo = 0;
+            render_object.Vao = 0;
+            render_object.VertexOffsets = {};
+            m_render_objects[object_index++] = render_object;
+            continue;
+        }
+
         GLuint vbo, vao;
         GL_CHECK(glGenVertexArrays, 1, &vao);
         GL_CHECK(glBindVertexArray, vao);
@@ -131,6 +140,8 @@ void SceneRenderer::render(glm::mat4 const& view, glm::mat4 const& projection)
     if (!m_scene || !m_loaded)
         return;
 
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
     m_shader.bind();
 
     GLuint mvp_loc = m_shader.get_uniform_location("u_mvp");
@@ -141,28 +152,22 @@ void SceneRenderer::render(glm::mat4 const& view, glm::mat4 const& projection)
     GLuint alpha_loc = m_shader.get_uniform_location("u_alpha");
     GLuint texture_loc = m_shader.get_uniform_location("u_texture");
 
+    auto flipper = glm::make_mat4(Transform_Flip);
+    auto pv = projection * view;
     for (auto const& instance : m_scene->instances())
     {
         int object_id = instance.object_index();
         if (object_id < 0 || object_id >= m_scene->geometry_object_count())
+        {
+            //std::cerr << "Out of bounds instance object id (" << object_id << "/" << m_render_objects.size() << ")" << std::endl;
             continue;
-
+        }
         RenderObject render_object = m_render_objects[object_id];
         GL_CHECK(glBindVertexArray, render_object.Vao);
 
         auto const& geometry_object = m_scene->geometry_object(object_id);
-        glm::mat4 instance_modified_matrix = instance.transform_matrix();
-
-        instance_modified_matrix[0].w = 0;
-        instance_modified_matrix[1].w = 0;
-        instance_modified_matrix[2].w = 0;
-        instance_modified_matrix[3].w = 1;
-
-        auto gobj_translate = glm::translate(glm::mat4(1), geometry_object.origin());
-        auto flipper = glm::make_mat4(Transform_Flip);
-
-        glm::mat4 transform = flipper * instance_modified_matrix;
-        glm::mat4 mvp = (mvp_dir ? projection * view * transform : transform * view * projection);;
+        
+        glm::mat4 mvp = pv * flipper * instance.transform_matrix();
 
         int mesh_i = 0;
         for (auto const& mesh : geometry_object.meshes())

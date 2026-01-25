@@ -106,8 +106,8 @@ void WelcomeView::on_mouse_release(UI::MouseButton button, double x, double y)
 
 void WelcomeView::on_mouse_moved(double x, double y)
 {
-    int dx = x - m_last_mouse_x;
-    int dy = y - m_last_mouse_y;
+    double dx = x - m_last_mouse_x;
+    double dy = y - m_last_mouse_y;
     m_mouse_dx = dx;
     m_mouse_dy = dy;
     m_last_mouse_x = x;

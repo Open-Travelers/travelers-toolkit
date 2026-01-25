@@ -194,6 +194,9 @@ bool Scene::read_geometry_set(Twoc::BinaryReader &reader)
                     float unk3 = reader.f32();
                     reader.seek(ReaderBase::Current, data_count * 0x18);
                 }
+
+                GeometryObject empty_obj;
+                geometry_objects.push_back(empty_obj);
             }
         }
     }
@@ -217,6 +220,11 @@ bool Scene::read_instance_set(Twoc::BinaryReader &reader)
         instances.push_back(Instance(instance));
     }
 
+    count = reader.u32();
+    for (int i = 0; i < count; i++)
+    {
+        reader.seek(Twoc::ReaderBase::Current, 0x60);
+    }
     m_instances = instances;
     return true;
 }

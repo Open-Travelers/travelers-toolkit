@@ -18,10 +18,10 @@ protected:
     glm::mat4 m_projection_matrix;
 
     bool m_rotating_camera { false };
-    int m_last_mouse_x { 0 };
-    int m_last_mouse_y { 0 };
-    int m_mouse_dx { 0 };
-    int m_mouse_dy { 0 };
+    double m_last_mouse_x { 0 };
+    double m_last_mouse_y { 0 };
+    double m_mouse_dx { 0 };
+    double m_mouse_dy { 0 };
 
     std::vector<std::string> m_texture_names;
     int m_texture_selected { -1 };
