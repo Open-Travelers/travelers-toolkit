@@ -10,8 +10,6 @@ out vec4 v_color;
 out vec2 v_uv;
 out vec3 v_normal;
 
-const vec4 WHITE = vec4(1.0, 1.0, 1.0, 1.0);
-
 vec4 split_color(uint color)
 {
     vec4 result;
@@ -21,15 +19,14 @@ vec4 split_color(uint color)
     }
     result.a = float((color & uint(0xff000000)) >> 24) / 255.0;
     result.b = float((color & uint(0x00ff0000)) >> 16) / 255.0;
-    result.r = float((color & uint(0x0000ff00)) >> 8) / 255.0;
-    result.g = float((color & uint(0x000000ff))) / 255.0;
+    result.g = float((color & uint(0x0000ff00)) >> 8) / 255.0;
+    result.r = float((color & uint(0x000000ff))) / 255.0;
     return result;
 }
 
 void main() {
-    vec4 color = mix(split_color(l_color), WHITE, u_backdrop_color_usage);
     v_uv = l_uv;
     v_normal = l_normal;
-    v_color = color;
+    v_color = split_color(l_color);
     gl_Position = u_mvp * vec4(l_position, 1.0f);
 }
